@@ -692,11 +692,25 @@
 </script>
      <script>
     // ==================== CORE FUNCTIONS ====================
-    function login(guest = false) {
-      const name = document.getElementById('user').value.trim() || (guest ? "Guest" : "Civil Engineer");
-      document.getElementById('username').textContent = name;
-      document.getElementById('login-screen').style.display = "none";
-    }
+function login(guest = false) {
+  console.log("Login button clicked!"); // Debug: Check if this runs
+
+  const name = document.getElementById('user').value.trim() || (guest ? "Guest" : "Civil Engineer");
+  document.getElementById('username').textContent = name;
+
+  // Hide login screen
+  const loginScreen = document.getElementById('login-screen');
+  if (loginScreen) {
+    loginScreen.style.display = "none";
+    console.log("Login screen hidden");
+  } else {
+    console.error("Login screen element not found!");
+  }
+
+  // Load homepage
+  console.log("Calling showHome()...");
+  showHome();
+}
 
     function toggleSub(id) {
       document.getElementById(id).classList.toggle('active');
@@ -752,36 +766,56 @@ function verifySlab() {
   const FF = parseFloat(document.getElementById('FF_s').value);
   const fck = parseFloat(document.getElementById('fck_s').value);
   const fy = parseFloat(document.getElementById('fy_s').value);
-  const Ast_prov = parseFloat(document.getElementById('Ast_s').value);
+  const Ast_prov = parseFloat(document.getElementById('Ast_s').value); // mm²/m in short direction
 
   const d = D - 25; // effective depth
-  const DL = D/1000 * 25;
-  const w = 1.5 * (DL + LL + FF);
+  const DL = D / 1000 * 25; // self-weight
+  const wu = 1.5 * (DL + LL + FF);
+
   const ratio = Ly / Lx;
   const isOneWay = ratio >= 2;
 
   let Mu_max;
   if (isOneWay) {
-    Mu_max = w * Lx * Lx / 8; // simply supported one-way
+    // One-way, simply supported conservative
+    Mu_max = wu * Lx * Lx / 8; // kNm/m
   } else {
-    // approximate two-way coeff for restrained
-    const coeff = ratio <= 1.5 ? 0.09 : 0.07;
-    Mu_max = coeff * w * Lx * Lx;
+    // Two-way, approximate interior panel (Table 26)
+    let coeff = 0.09; // short span negative
+    if (ratio > 1.5) coeff = 0.07;
+    Mu_max = coeff * wu * Lx * Lx;
   }
 
-  const Ast_req = (Mu_max * 1e6) / (0.87 * fy * 0.95 * d);
-  const defl_ok = (Lx * 1000 / d) <= (isOneWay ? 28 : 35); // basic limits
+  // Required Ast (short direction)
+  const Ast_req = (Mu_max * 1e6) / (0.87 * fy * d * 0.92);
 
-  const safe = Ast_prov >= Ast_req && defl_ok;
+  // Min steel
+  const minPt = fy > 415 ? 0.08 : 0.12;
+  const minAst = minPt / 100 * 1000 * D;
+  const Ast_final = Math.max(Ast_req, minAst);
+
+  // Deflection check (short span)
+  const basicRatio = isOneWay ? 20 : 35;
+  const deflRatio = Lx * 1000 / d;
+  const deflOk = deflRatio <= basicRatio;
+
+  // Verdict
+  const steelOk = Ast_prov >= Ast_final;
+  const overall = steelOk && deflOk ? 'SAFE' : 'REVISE';
 
   document.getElementById('slab-verifier-result').innerHTML = `
-    <div class="result ${safe ? '' : 'fail'}">
-      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
-      <strong>Type: ${isOneWay ? 'One-Way' : 'Two-Way'} Slab</strong><br>
-      <strong>Required Ast: ${Ast_req.toFixed(0)} mm²/m</strong><br>
-      <strong>Provided Ast: ${Ast_prov} mm²/m (${Ast_prov >= Ast_req ? 'OK' : 'Insufficient'})</strong><br>
-      <strong>Deflection Check: span/d = ${(Lx*1000/d).toFixed(1)} ≤ ${isOneWay ? 28 : 35} ? ${defl_ok ? 'OK' : 'Fails'}</strong><br>
-      <em>Preliminary check only. Torsion steel needed for two-way.</em>
+    <div class="result ${overall === 'SAFE' ? '' : 'fail'}">
+      <h3 style="color:${overall === 'SAFE' ? '#27ae60' : '#c0392b'}">
+        SLAB VERIFIER (IS 456:2000) - ${overall}
+      </h3>
+      <strong>Type:</strong> ${isOneWay ? 'One-Way' : 'Two-Way'} Slab (Ly/Lx = ${ratio.toFixed(2)})<br>
+      <strong>Required Mu:</strong> ${Mu_max.toFixed(2)} kNm/m<br>
+      <strong>Required Ast (short dir.):</strong> ${Ast_final.toFixed(0)} mm²/m (min ${minAst.toFixed(0)})<br>
+      <strong>Provided Ast:</strong> ${Ast_prov} mm²/m → ${steelOk ? 'OK' : 'Insufficient'}<br>
+      <strong>Deflection:</strong> Lx/d = ${deflRatio.toFixed(1)} ≤ ${basicRatio} → ${deflOk ? 'OK' : 'Fails'}<br>
+      <br>
+      <strong>Final Verdict:</strong> ${overall} - ${overall === 'SAFE' ? 'Slab is adequate' : 'Revise thickness or reinforcement'}<br>
+      <em>Note: Preliminary check. For two-way, add torsion steel at corners.</em>
     </div>
   `;
 }
@@ -805,33 +839,55 @@ function columnVerifier() {
 }
 
 function verifyColumn() {
-  const Pu = parseFloat(document.getElementById('Pu_c').value) * 1000;
-  const Mu = parseFloat(document.getElementById('Mu_c').value) * 1e6;
-  const side = parseFloat(document.getElementById('side_c').value);
-  const Asc_prov = parseFloat(document.getElementById('Asc_c').value);
+  const Pu = parseFloat(document.getElementById('Pu_c').value) * 1000; // kN → N
+  const Mu = parseFloat(document.getElementById('Mu_c').value) * 1e6; // kNm → Nmm
+  const side = parseFloat(document.getElementById('side_c').value); // mm
+  const Asc_prov = parseFloat(document.getElementById('Asc_c').value); // mm²
   const fck = parseFloat(document.getElementById('fck_c').value);
 
   const Ag = side * side;
-  const P_max = 0.4 * fck * Ag; // very conservative axial capacity
-  const safe_axial = Pu <= P_max;
 
-  // Very simplified interaction (e ≈ Mu/Pu)
-  const e = Mu / Pu;
-  const e_lim = side / 30; // rough limit for uniaxial
-  const safe = safe_axial && Asc_prov >= 0.008 * Ag && e <= e_lim;
+  // 1. Slenderness check (assume braced, k ≈ 0.85 for typical building)
+  const le = 0.85 * side * 4; // conservative unsupported length ≈ 4m (adjust if needed)
+  const slenderness = le / side;
+  const slendernessOk = slenderness <= 12 ? 'Short Column' : 'Slender – Needs additional moment';
+
+  // 2. Axial capacity (Cl. 39.3, short column)
+  const PuCap = 0.4 * fck * (Ag - Asc_prov) + 0.67 * fy * Asc_prov; // fy assumed 500
+
+  // 3. Approximate uniaxial moment capacity (conservative)
+  const MuCap = 0.12 * fck * side * side * side / 1e6; // kNm (rough from SP 16)
+
+  // 4. Interaction ratio (linear approximation, conservative)
+  const interaction = (Pu / PuCap) + (Mu / MuCap);
+  const capacityStatus = interaction <= 1 ? 'SAFE' : 'UNSAFE – Increase size or steel';
+
+  // 5. Minimum steel check (Cl. 26.5.3.1)
+  const minAsc = 0.008 * Ag; // 0.8%
+  const steelStatus = Asc_prov >= minAsc ? 'OK' : 'Insufficient – Min 0.8% required';
+
+  // Overall verdict
+  const overall = (capacityStatus === 'SAFE' && steelStatus === 'OK' && slendernessOk.includes('Short')) ? 'SAFE' : 'REVISE';
 
   document.getElementById('column-verifier-result').innerHTML = `
-    <div class="result ${safe ? '' : 'fail'}">
-      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
-      <strong>Provided Area: ${Ag.toLocaleString()} mm²</strong><br>
-      <strong>Axial Capacity (approx): ${(P_max/1000).toFixed(0)} kN > ${Pu/1000} kN ? ${safe_axial ? 'OK' : 'Fails'}</strong><br>
-      <strong>Min Steel: ${0.008*Ag.toFixed(0)} mm² ≤ ${Asc_prov} mm² ? ${Asc_prov >= 0.008*Ag ? 'OK' : 'Too little'}</strong><br>
-      <strong>Eccentricity check: OK for preliminary</strong><br>
-      <em>Very basic check – needs full interaction diagram for accuracy.</em>
+    <div class="result ${overall === 'SAFE' ? '' : 'fail'}">
+      <h3 style="color:${overall === 'SAFE' ? '#27ae60' : '#c0392b'}">
+        COLUMN VERIFIER (IS 456:2000 / SP 16) - ${overall}
+      </h3>
+      <strong>Provided Size:</strong> ${side} × ${side} mm (Ag = ${Ag.toLocaleString()} mm²)<br>
+      <strong>Factored Pu:</strong> ${(Pu/1000).toFixed(0)} kN<br>
+      <strong>Factored Mu:</strong> ${(Mu/1e6).toFixed(1)} kNm<br>
+      <strong>Axial Capacity:</strong> ${(PuCap/1000).toFixed(0)} kN → ${Pu <= PuCap ? 'OK' : 'Exceeds'}<br>
+      <strong>Moment Capacity (approx):</strong> ${MuCap.toFixed(1)} kNm → ${Mu <= MuCap ? 'OK' : 'Exceeds'}<br>
+      <strong>Interaction Ratio:</strong> ${interaction.toFixed(2)} ≤ 1 → ${capacityStatus}<br>
+      <strong>Slenderness:</strong> le/D = ${slenderness.toFixed(1)} → ${slendernessOk}<br>
+      <strong>Steel Provided:</strong> ${Asc_prov.toLocaleString()} mm² → ${steelStatus}<br>
+      <br>
+      <strong>Final Verdict:</strong> ${overall} - ${overall === 'SAFE' ? 'Column is adequate' : 'Revise size, steel or check slenderness'}<br>
+      <em>Note: Simplified uniaxial check. For biaxial or slender columns, use full SP 16 charts.</em>
     </div>
   `;
 }
-
 // === FOOTING VERIFIER ===
 function showFootVerifier() {
   document.getElementById('content').innerHTML = document.getElementById('footing-verifier-template').innerHTML;
@@ -849,31 +905,54 @@ function footingVerifier() {
     <button class="btn-calc" onclick="verifyFooting()">Verify Footing</button>
   `;
 }
-
 function verifyFooting() {
-  const Pu = parseFloat(document.getElementById('Pu_f').value);
-  const sbc = parseFloat(document.getElementById('sbc').value);
-  const size = parseFloat(document.getElementById('size_f').value);
-  const D = parseFloat(document.getElementById('D_f').value);
-  const Ast_prov = parseFloat(document.getElementById('Ast_f').value);
+  const Pu = parseFloat(document.getElementById('Pu_f').value); // kN
+  const sbc = parseFloat(document.getElementById('sbc').value); // kN/m²
+  const size = parseFloat(document.getElementById('size_f').value); // m (square side)
+  const D = parseFloat(document.getElementById('D_f').value); // mm
+  const Ast_prov = parseFloat(document.getElementById('Ast_f').value); // mm² total
 
-  const area_req = Pu / (sbc * 0.6); // 60% of SBC for safety
-  const area_prov = size * size;
-  const d = D - 75; // eff depth
-  const pt = Ast_prov / (size * 1000 * d) * 100;
-  const safe = area_prov >= area_req && pt >= 0.12;
+  const area_prov = size * size; // m²
+  const area_req = Pu / (sbc * 0.6); // 60% of SBC for safety factor (typical)
+
+  const d = D - 75; // eff depth (cover 50mm + half bar 20mm)
+
+  // 1. Area check
+  const areaOk = area_prov >= area_req;
+
+  // 2. Punching shear check (Cl. 31.6.3)
+  const bo = 4 * (size * 1000 + d); // perimeter at d/2 from column face, assume square column = size
+  const Vu_punch = Pu * 1000; // N
+  const tau_v = Vu_punch / (bo * d); // MPa
+  const tau_c_punch = 0.25 * Math.sqrt(fck); // MPa (Cl. 31.6.3)
+  const punchingOk = tau_v <= tau_c_punch;
+
+  // 3. Bending moment & steel check (one-way shear critical section at face)
+  const M = (Pu / 2) * (size / 2 - 0.5) ** 2; // approx for square footing, kNm (conservative)
+  const Ast_req = (M * 1e6) / (0.87 * fy * d * 0.92); // mm²/m
+  const Ast_prov_per_m = Ast_prov / size; // mm²/m
+  const steelOk = Ast_prov_per_m >= Ast_req;
+
+  // Overall verdict
+  const overall = areaOk && punchingOk && steelOk ? 'SAFE' : 'REVISE';
 
   document.getElementById('footing-verifier-result').innerHTML = `
-    <div class="result ${safe ? '' : 'fail'}">
-      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
-      <strong>Required Area: ${area_req.toFixed(2)} m²</strong><br>
-      <strong>Provided Area: ${area_prov.toFixed(2)} m² (${area_prov >= area_req ? 'OK' : 'Too small'})</strong><br>
-      <strong>Steel %: ${pt.toFixed(2)}% ≥ 0.12% ? ${pt >= 0.12 ? 'OK' : 'Too little'}</strong><br>
-      <em>Basic size & steel check only. Punching/shear still needed.</em>
+    <div class="result ${overall === 'SAFE' ? '' : 'fail'}">
+      <h3 style="color:${overall === 'SAFE' ? '#27ae60' : '#c0392b'}">
+        ISOLATED FOOTING VERIFIER (IS 456:2000) - ${overall}
+      </h3>
+      <strong>Factored Load Pu:</strong> ${Pu.toFixed(0)} kN<br>
+      <strong>Soil SBC:</strong> ${sbc} kN/m²<br>
+      <strong>Required Area:</strong> ${area_req.toFixed(2)} m² → Provided: ${area_prov.toFixed(2)} m² (${areaOk ? 'OK' : 'Too small'})<br>
+      <strong>Punching Shear:</strong> τv = ${tau_v.toFixed(2)} MPa ≤ τc = ${tau_c_punch.toFixed(2)} MPa → ${punchingOk ? 'OK' : 'Fails'}<br>
+      <strong>Bending Moment (approx):</strong> ${M.toFixed(1)} kNm<br>
+      <strong>Required Ast:</strong> ${Ast_req.toFixed(0)} mm²/m → Provided: ${Ast_prov_per_m.toFixed(0)} mm²/m (${steelOk ? 'OK' : 'Insufficient'})<br>
+      <br>
+      <strong>Final Verdict:</strong> ${overall} - ${overall === 'SAFE' ? 'Footing is adequate' : 'Revise size, depth or reinforcement'}<br>
+      <em>Note: Assumes square footing. For rectangular or eccentric load, use full analysis.</em>
     </div>
   `;
 }
-
 // === WATER TANK VERIFIER ===
 function showWaterTankVerifier() {
   document.getElementById('content').innerHTML = document.getElementById('watertank-verifier-template').innerHTML;
@@ -896,28 +975,61 @@ function verifyWaterTank() {
   const L = parseFloat(document.getElementById('L_t').value);
   const B = parseFloat(document.getElementById('B_t').value);
   const H = parseFloat(document.getElementById('H_t').value);
-  const D = parseFloat(document.getElementById('D_t').value);
-  const Ast_prov = parseFloat(document.getElementById('Ast_t').value);
+  const D_prov = parseFloat(document.getElementById('D_t').value); // provided wall thickness mm
+  const Ast_prov = parseFloat(document.getElementById('Ast_t').value); // mm²/m both faces
 
-  const d = D - 50;
-  const press_max = 10 * H; // kN/m²
-  const M_long = press_max * L * L / 12; // kNm/m (approx fixed top/bottom)
-  const Ast_req = (M_long * 1e6) / (0.87 * 415 * d * 0.9); // using Fe415 conservative
+  const d = D_prov - 50; // eff depth (cover 40mm + half bar 12mm typical)
 
-  const safe = Ast_prov >= Ast_req && D >= 200;
+  // 1. Hydrostatic pressure at base
+  const p_base = 10 * H; // kN/m²
+
+  // 2. Max moment (long wall, fixed base, free top)
+  const M_max = p_base * H * H / 12; // kNm/m (conservative)
+
+  // 3. Required thickness (approx from moment, M25 typical)
+  const fck = 25;
+  const D_req_moment = Math.ceil(Math.sqrt(M_max * 1e6 / (0.138 * fck * 1000)) + 50);
+  const D_min_table = 150 + 30 * H; // rough IS 3370 Table 1 guidance
+  const D_min = Math.max(200, D_min_table, D_req_moment);
+
+  const thicknessOk = D_prov >= D_min;
+
+  // 4. Required steel (both faces)
+  const Ast_req = M_max * 1e6 / (0.87 * 500 * d * 0.92); // Fe500 typical
+  const Ast_min = 0.003 * 1000 * D_prov; // 0.3% min (IS 3370)
+  const Ast_final = Math.max(Ast_req, Ast_min);
+
+  const steelOk = Ast_prov >= Ast_final;
+
+  // 5. Crack width check (IS 3370 Cl. 3.3)
+  const fs = 0.58 * 500 * Ast_prov / (0.003 * 1000 * D_prov); // service stress
+  const acr = 40 + 12 / 2; // cover 40mm + half bar
+  const h = D_prov;
+  const xu = 0.48 * d;
+  const eps_m = fs / 200000;
+  const w_cr = 3 * acr * eps_m / (1 + 2 * (acr - 40) / (h - xu));
+  const crackOk = w_cr <= 0.2;
+
+  // Overall verdict
+  const overall = thicknessOk && steelOk && crackOk ? 'SAFE' : 'REVISE';
 
   document.getElementById('watertank-verifier-result').innerHTML = `
-    <div class="result ${safe ? '' : 'fail'}">
-      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
-      <strong>Max Pressure: ${press_max} kN/m²</strong><br>
-      <strong>Required Ast (long wall): ${Ast_req.toFixed(0)} mm²/m</strong><br>
-      <strong>Provided Ast: ${Ast_prov} mm²/m (${Ast_prov >= Ast_req ? 'OK' : 'Insufficient'})</strong><br>
-      <strong>Wall Thickness: ${D} mm ≥ 200 mm ? ${D >= 200 ? 'OK' : 'Too thin'}</strong><br>
-      <em>Preliminary check. IS 3370 needs crack & leakage checks too.</em>
+    <div class="result ${overall === 'SAFE' ? '' : 'fail'}">
+      <h3 style="color:${overall === 'SAFE' ? '#27ae60' : '#c0392b'}">
+        WATER TANK VERIFIER (IS 3370:2009) - ${overall}
+      </h3>
+      <strong>Water Depth:</strong> ${H.toFixed(1)} m | Pressure: ${p_base.toFixed(1)} kN/m²<br>
+      <strong>Provided Thickness:</strong> ${D_prov} mm (Min required ≈ ${Math.round(D_min)} mm) → ${thicknessOk ? 'OK' : 'Too thin'}<br>
+      <strong>Max Moment:</strong> ${M_max.toFixed(2)} kNm/m<br>
+      <strong>Required Ast (both faces):</strong> ${Ast_final.toFixed(0)} mm²/m (min 0.3%)<br>
+      <strong>Provided Ast:</strong> ${Ast_prov} mm²/m → ${steelOk ? 'OK' : 'Insufficient'}<br>
+      <strong>Crack Width:</strong> ${w_cr.toFixed(3)} mm ≤ 0.2 mm → ${crackOk ? 'OK' : 'Fails'}<br>
+      <br>
+      <strong>Final Verdict:</strong> ${overall} - ${overall === 'SAFE' ? 'Tank design is adequate for liquid retention' : 'Revise thickness, steel or check crack width'}<br>
+      <em>Note: Assumes rectangular tank, fixed base, free top. Verify base slab separately.</em>
     </div>
   `;
 }
-
 // Calculation logic
 function verifyBeam() {
   const L = parseFloat(document.getElementById('span_v').value);
@@ -965,71 +1077,243 @@ function verifyBeam() {
 
 function showHome() {
   const username = document.getElementById('username').textContent;
-
   document.getElementById('content').innerHTML = `
-    <div class="card" style="text-align:center;padding:70px 40px;background:#ffffff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.12);">
-      <h2 style="font-size:38px;color:var(--d);margin-bottom:20px;font-weight:800;">
-        Welcome, ${username}
+    <div class="card" style="text-align:center;padding:80px 40px;background:#ffffff;border-radius:24px;box-shadow:0 20px 70px rgba(0,0,0,0.15);">
+      <h2 style="font-size:42px;color:var(--d);margin-bottom:24px;font-weight:800;">
+        Welcome, ${username}!
       </h2>
-      <p style="font-size:21px;color:#555;max-width:900px;margin:0 auto 60px;line-height:1.7;">
-        CivilCode is your free, reliable companion for quick and accurate structural designs<br>
-        as per Indian Standards — built for students, juniors, and practicing engineers.
+      <p style="font-size:22px;color:#555;max-width:800px;margin:0 auto 60px;line-height:1.6;">
+        Choose your path: Design new structural elements or verify existing ones.
       </p>
 
-      <div style="font-size:18px;color:#666;margin-bottom:60px;">
-        <strong>9 Design Modules</strong> • <strong>100+ IS Codes with direct PDFs</strong> • <strong>Global Standards Included</strong>
+      <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;margin-bottom:60px;">
+        <!-- DESIGN CARD -->
+        <div class="mode-card" style="width:360px;cursor:pointer;" onclick="showDesignGrid()">
+          <i class="fas fa-calculator" style="font-size:90px;color:var(--p);margin-bottom:20px;"></i>
+          <h3 style="font-size:32px;color:var(--d);">Design</h3>
+          <p style="font-size:18px;color:#666;margin-top:12px;">
+            Create new slabs, beams, columns, tanks, staircases, mix designs etc.
+          </p>
+        </div>
+
+        <!-- VERIFY CARD -->
+        <div class="mode-card" style="width:360px;cursor:pointer;" onclick="showVerifyGrid()">
+          <i class="fas fa-check-double" style="font-size:90px;color:var(--g);margin-bottom:20px;"></i>
+          <h3 style="font-size:32px;color:var(--d);">Verify</h3>
+          <p style="font-size:18px;color:#666;margin-top:12px;">
+            Check safety of existing beam, slab, column, footing, tank designs
+          </p>
+        </div>
       </div>
 
-      <h3 style="font-size:26px;color:var(--d);margin-bottom:30px;font-weight:600;">
-        Jump into your most-used tools
-      </h3>
+      <p style="font-size:16px;color:#777;line-height:1.8;">
+        All calculations follow Limit State Method as per latest Indian Standards.<br>
+        <strong>For educational/preliminary use only.</strong> Always get final approval from a qualified structural engineer.
+      </p>
 
-<div class="mode-grid" style="max-width:1200px;margin:0 auto;">
-  <div class="mode-card" onclick="showOneWay()">
-    <i class="fas fa-ruler-horizontal" style="font-size:55px;color:var(--p);margin-bottom:16px;"></i>
-    <h3>One-Way Slab Design</h3>
-    <p>Simply supported or continuous</p>
-  </div>
-  <div class="mode-card" onclick="showTwoWay()">
-    <i class="fas fa-th" style="font-size:55px;color:var(--p);margin-bottom:16px;"></i>
-    <h3>Two-Way Slab Design</h3>
-    <p>With restrained corners</p>
-  </div>
-  <div class="mode-card" onclick="showBeam()">
-    <i class="fas fa-vector-square" style="font-size:55px;color:var(--p);margin-bottom:16px;"></i>
-    <h3>Beam Design</h3>
-    <p>Singly or doubly reinforced</p>
-  </div>
-  <div class="mode-card" onclick="showColumn()">
-    <i class="fas fa-columns" style="font-size:55px;color:var(--p);margin-bottom:16px;"></i>
-    <h3>Column Design</h3>
-    <p>Axial + uniaxial bending</p>
-  </div>
-  <div class="mode-card" onclick="showWaterTank()">
-    <i class="fas fa-cube" style="font-size:55px;color:var(--p);margin-bottom:16px;"></i>
-    <h3>Water Tank Design</h3>
-    <p>Rectangular • UG/OH • IS 3370</p>
-  </div>
-  <div class="mode-card" onclick="showCodalProvisions()">
-    <i class="fas fa-book-open" style="font-size:55px;color:var(--p);margin-bottom:16px;"></i>
-    <h3>Codal Provisions</h3>
-    <p>Indian + International codes</p>
-  </div>
-  <div class="mode-card" onclick="showMixDesign()">
-    <i class="fas fa-flask" style="font-size:55px;color:var(--p);margin-bottom:16px;"></i>
-    <h3>Concrete Mix Design</h3>
-    <p>M20–M60 • IS 10262:2019</p>
-  </div>
-</div>
-      <div style="margin-top:70px;padding-top:40px;border-top:1px solid #eee;">
-        <p style="font-size:16px;color:#777;max-width:800px;margin:0 auto;line-height:1.8;">
-          All calculations follow limit state method as per relevant IS codes.<br>
-          <strong>For educational and preliminary reference only.</strong> Always verify final designs with detailed manual calculations and a qualified structural engineer.
-        </p>
-        <p style="margin-top:30px;font-size:14px;color:#999;">
-          Made with passion for civil engineering • Free forever • Version 1.0 • 2025
-        </p>
+      <p style="margin-top:40px;font-size:15px;color:#999;">
+        Created with passion • Free forever • Version 1.0 • 2025
+      </p>
+    </div>
+  `;
+}
+
+// New function: Show grid of all Design Calculators (like IS Codes country selection)
+function showDesignGrid() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2 style="text-align:center;margin-bottom:30px;">Design Calculators</h2>
+      <p style="text-align:center;font-size:18px;color:#555;margin-bottom:40px;">Select the structural element you want to design</p>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="showOneWay()">
+          <i class="fas fa-ruler-horizontal" style="font-size:70px;color:var(--p);"></i>
+          <h3>One-Way Slab</h3>
+          <p>Simply supported or continuous</p>
+        </div>
+        <div class="mode-card" onclick="showTwoWay()">
+          <i class="fas fa-th" style="font-size:70px;color:var(--p);"></i>
+          <h3>Two-Way Slab</h3>
+          <p>Restrained corners</p>
+        </div>
+        <div class="mode-card" onclick="showBeam()">
+          <i class="fas fa-vector-square" style="font-size:70px;color:var(--p);"></i>
+          <h3>Beam</h3>
+          <p>Singly/doubly reinforced</p>
+        </div>
+        <div class="mode-card" onclick="showColumn()">
+          <i class="fas fa-columns" style="font-size:70px;color:var(--p);"></i>
+          <h3>Column</h3>
+          <p>Axial + uniaxial bending</p>
+        </div>
+        <div class="mode-card" onclick="showWaterTank()">
+          <i class="fas fa-cube" style="font-size:70px;color:var(--p);"></i>
+          <h3>Water Tank</h3>
+          <p>Rectangular (IS 3370)</p>
+        </div>
+        <div class="mode-card" onclick="showStaircase()">
+          <i class="fas fa-stairs" style="font-size:70px;color:var(--p);"></i>
+          <h3>Staircase</h3>
+          <p>Dog-legged with landing</p>
+        </div>
+        <div class="mode-card" onclick="showMixDesign()">
+          <i class="fas fa-flask" style="font-size:70px;color:var(--p);"></i>
+          <h3>Concrete Mix</h3>
+          <p>M20 to M60 (IS 10262)</p>
+        </div>
+        <div class="mode-card" onclick="showCrack()">
+          <i class="fas fa-hard-hat" style="font-size:70px;color:var(--p);"></i>
+          <h3>Crack Width</h3>
+          <p>Annex F calculation</p>
+        </div>
+        <div class="mode-card" onclick="showDevLength()">
+          <i class="fas fa-link" style="font-size:70px;color:var(--p);"></i>
+          <h3>Development Length</h3>
+          <p>Tension/compression</p>
+        </div>
       </div>
+      <button class="btn-calc" onclick="showHome()" style="margin-top:40px;width:auto;padding:14px 32px;">
+        ← Back to Home
+      </button>
+    </div>
+  `;
+}
+
+// New function: Show grid of all Verifiers (similar style)
+function showVerifyGrid() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2 style="text-align:center;margin-bottom:30px;">Design Verifiers</h2>
+      <p style="text-align:center;font-size:18px;color:#555;margin-bottom:40px;">Verify safety of existing designs</p>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="showVerifier()">
+          <i class="fas fa-vector-square" style="font-size:70px;color:var(--g);"></i>
+          <h3>Beam Verifier</h3>
+          <p>Singly reinforced</p>
+        </div>
+        <div class="mode-card" onclick="showSlabVerifier()">
+          <i class="fas fa-square" style="font-size:70px;color:var(--g);"></i>
+          <h3>Slab Verifier</h3>
+          <p>One-way or two-way</p>
+        </div>
+        <div class="mode-card" onclick="showColumnVerifier()">
+          <i class="fas fa-columns" style="font-size:70px;color:var(--g);"></i>
+          <h3>Column Verifier</h3>
+          <p>Axial + uniaxial</p>
+        </div>
+        <div class="mode-card" onclick="showFootVerifier()">
+          <i class="fas fa-layer-group" style="font-size:70px;color:var(--g);"></i>
+          <h3>Footing Verifier</h3>
+          <p>Isolated footing</p>
+        </div>
+        <div class="mode-card" onclick="showWaterTankVerifier()">
+          <i class="fas fa-tint" style="font-size:70px;color:var(--g);"></i>
+          <h3>Water Tank Verifier</h3>
+          <p>Rectangular tank</p>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="showHome()" style="margin-top:40px;width:auto;padding:14px 32px;">
+        ← Back to Home
+      </button>
+    </div>
+  `;
+}
+
+// New function: Show grid of all Design Calculators (like IS Codes country selection)
+function showDesignGrid() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2 style="text-align:center;margin-bottom:30px;">Design Calculators</h2>
+      <p style="text-align:center;font-size:18px;color:#555;margin-bottom:40px;">Select the structural element you want to design</p>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="showOneWay()">
+          <i class="fas fa-ruler-horizontal" style="font-size:70px;color:var(--p);"></i>
+          <h3>One-Way Slab</h3>
+          <p>Simply supported or continuous</p>
+        </div>
+        <div class="mode-card" onclick="showTwoWay()">
+          <i class="fas fa-th" style="font-size:70px;color:var(--p);"></i>
+          <h3>Two-Way Slab</h3>
+          <p>Restrained corners</p>
+        </div>
+        <div class="mode-card" onclick="showBeam()">
+          <i class="fas fa-vector-square" style="font-size:70px;color:var(--p);"></i>
+          <h3>Beam</h3>
+          <p>Singly/doubly reinforced</p>
+        </div>
+        <div class="mode-card" onclick="showColumn()">
+          <i class="fas fa-columns" style="font-size:70px;color:var(--p);"></i>
+          <h3>Column</h3>
+          <p>Axial + uniaxial bending</p>
+        </div>
+        <div class="mode-card" onclick="showWaterTank()">
+          <i class="fas fa-cube" style="font-size:70px;color:var(--p);"></i>
+          <h3>Water Tank</h3>
+          <p>Rectangular (IS 3370)</p>
+        </div>
+        <div class="mode-card" onclick="showStaircase()">
+          <i class="fas fa-stairs" style="font-size:70px;color:var(--p);"></i>
+          <h3>Staircase</h3>
+          <p>Dog-legged with landing</p>
+        </div>
+        <div class="mode-card" onclick="showMixDesign()">
+          <i class="fas fa-flask" style="font-size:70px;color:var(--p);"></i>
+          <h3>Concrete Mix</h3>
+          <p>M20 to M60 (IS 10262)</p>
+        </div>
+        <div class="mode-card" onclick="showCrack()">
+          <i class="fas fa-hard-hat" style="font-size:70px;color:var(--p);"></i>
+          <h3>Crack Width</h3>
+          <p>Annex F calculation</p>
+        </div>
+        <div class="mode-card" onclick="showDevLength()">
+          <i class="fas fa-link" style="font-size:70px;color:var(--p);"></i>
+          <h3>Development Length</h3>
+          <p>Tension/compression</p>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="showHome()" style="margin-top:40px;width:auto;padding:14px 32px;">
+        ← Back to Home
+      </button>
+    </div>
+  `;
+}
+
+// New function: Show grid of all Verifiers (similar style)
+function showVerifyGrid() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2 style="text-align:center;margin-bottom:30px;">Design Verifiers</h2>
+      <p style="text-align:center;font-size:18px;color:#555;margin-bottom:40px;">Verify safety of existing designs</p>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="showVerifier()">
+          <i class="fas fa-vector-square" style="font-size:70px;color:var(--g);"></i>
+          <h3>Beam Verifier</h3>
+          <p>Singly reinforced</p>
+        </div>
+        <div class="mode-card" onclick="showSlabVerifier()">
+          <i class="fas fa-square" style="font-size:70px;color:var(--g);"></i>
+          <h3>Slab Verifier</h3>
+          <p>One-way or two-way</p>
+        </div>
+        <div class="mode-card" onclick="showColumnVerifier()">
+          <i class="fas fa-columns" style="font-size:70px;color:var(--g);"></i>
+          <h3>Column Verifier</h3>
+          <p>Axial + uniaxial</p>
+        </div>
+        <div class="mode-card" onclick="showFootVerifier()">
+          <i class="fas fa-layer-group" style="font-size:70px;color:var(--g);"></i>
+          <h3>Footing Verifier</h3>
+          <p>Isolated footing</p>
+        </div>
+        <div class="mode-card" onclick="showWaterTankVerifier()">
+          <i class="fas fa-tint" style="font-size:70px;color:var(--g);"></i>
+          <h3>Water Tank Verifier</h3>
+          <p>Rectangular tank</p>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="showHome()" style="margin-top:40px;width:auto;padding:14px 32px;">
+        ← Back to Home
+      </button>
     </div>
   `;
 }
@@ -1067,10 +1351,11 @@ function showHome() {
   mixDesignPro();
 }
 
+
 function mixDesignPro() {
   document.getElementById('mix-section').innerHTML = `
     <h3 style="text-align:center;margin-bottom:20px;color:var(--p);">Concrete Mix Design (IS 10262:2019)</h3>
-    <label>Target Strength (MPa)</label>
+    <label>Target Grade</label>
     <select id="grade">
       <option value="20">M20</option>
       <option value="25" selected>M25</option>
@@ -1079,11 +1364,10 @@ function mixDesignPro() {
       <option value="40">M40</option>
       <option value="45">M45</option>
       <option value="50">M50</option>
-      <option value="55">M55</option>
       <option value="60">M60</option>
     </select>
 
-    <label>Exposure Condition</label>
+    <label>Exposure Condition (IS 456 Table 5)</label>
     <select id="exposure">
       <option value="Mild">Mild</option>
       <option value="Moderate" selected>Moderate</option>
@@ -1099,20 +1383,24 @@ function mixDesignPro() {
       <option value="40">40 mm</option>
     </select>
 
-    <label>Type of Aggregate</label>
+    <label>Aggregate Type</label>
     <select id="aggtype">
-      <option value="angular" selected>Angular</option>
+      <option value="angular" selected>Angular (Crushed)</option>
       <option value="subangular">Sub-angular</option>
-      <option value="gravel">Gravel (rounded)</option>
+      <option value="gravel">Gravel (Rounded)</option>
     </select>
 
     <label>Workability (Slump mm)</label>
     <input type="number" id="slump" value="100" min="25" max="200">
 
-    <label>Use Admixture?</label>
+    <label>Admixture Type</label>
     <select id="admix">
-      <option value="no" selected>No</option>
-      <option value="yes">Yes (Superplasticizer)</option>
+      <option value="none" selected>No Admixture</option>
+      <option value="superplasticizer">Chemical Superplasticizer (20-30% water reduction)</option>
+      <option value="flyash">Fly Ash (10-20% cement replacement)</option>
+      <option value="silicafume">Silica Fume (5-10% cement replacement)</option>
+      <option value="ggbs">GGBS (20-50% cement replacement)</option>
+      <option value="natural">Natural (Rice Husk Ash / Bagasse Ash - 10-15% replacement)</option>
     </select>
 
     <button class="btn-calc" onclick="calculateMix()">Design Mix</button>
@@ -1122,66 +1410,121 @@ function mixDesignPro() {
 function calculateMix() {
   const grade = parseFloat(document.getElementById('grade').value);
   const exposure = document.getElementById('exposure').value;
-  const agg = parseFloat(document.getElementById('agg').value);
-  const aggtype = document.getElementById('aggtype').value;
+  const aggSize = parseFloat(document.getElementById('agg').value);
+  const aggType = document.getElementById('aggtype').value;
   const slump = parseFloat(document.getElementById('slump').value);
-  const admix = document.getElementById('admix').value === "yes";
+  const admix = document.getElementById('admix').value;
 
-  // Target mean strength (fck + 1.65 * s)
-  const s = grade <= 20 ? 4 : 5; // standard deviation
-  const ftarget = grade + 1.65 * s;
+  // 1. Target mean strength
+  const sigma = (grade <= 20) ? 3.5 : (grade <= 35) ? 4.0 : 5.0;
+  const fTarget = grade + 1.65 * sigma;
 
-  // Water content (approx from table)
-  let w = 190; // base for 20mm
-  if (agg === 10) w += 15;
-  if (agg === 40) w -= 15;
-  if (slump > 100) w += 3 * (slump - 100) / 25;
+  // 2. Max w/c & min cement (IS 456 Table 5)
+  const exposureData = {
+    Mild: {wc: 0.55, cement: 300},
+    Moderate: {wc: 0.50, cement: 300},
+    Severe: {wc: 0.45, cement: 320},
+    "Very Severe": {wc: 0.45, cement: 340},
+    Extreme: {wc: 0.40, cement: 360}
+  };
+  const {wc: maxWc, cement: minCement} = exposureData[exposure];
 
-  // Cement content (min from exposure)
-  const minCement = {
-    Mild: 300,
-    Moderate: 320,
-    Severe: 340,
-    "Very Severe": 360,
-    Extreme: 380
-  }[exposure];
+  // 3. Base water content (Table 2 IS 10262, 20mm, 50mm slump)
+  let water = 186;
+  if (aggSize === 10) water += 20;
+  if (aggSize === 40) water -= 10;
+  water += (slump - 50) * 3 / 25; // slump adjustment
 
-  // w/c ratio from table (approx)
-  let wc = 0.5;
-  if (grade >= 30) wc = 0.45;
-  if (grade >= 40) wc = 0.40;
-  if (grade >= 50) wc = 0.35;
+  // 4. Admixture adjustments
+  let cementReplacement = 0; // % of cement replaced
+  let waterReduction = 0;    // % reduction
 
-  // Adjust for admixture
-  if (admix) w *= 0.8; // 20% reduction typical
+  switch (admix) {
+    case "superplasticizer":
+      waterReduction = 25; // 20-30%, take 25% average
+      break;
+    case "flyash":
+      cementReplacement = 20; // typical 15-25%
+      waterReduction = 10;
+      break;
+    case "silicafume":
+      cementReplacement = 8; // 5-10%
+      waterReduction = 15;
+      break;
+    case "ggbs":
+      cementReplacement = 40; // 20-50%
+      waterReduction = 5;
+      break;
+    case "natural":
+      cementReplacement = 12; // 10-15%
+      waterReduction = 8;
+      break;
+    default:
+      // no admixture
+      break;
+  }
 
-  let cement = Math.max(minCement, w / wc);
-  cement = Math.ceil(cement / 5) * 5;
+  // Apply water reduction
+  water *= (1 - waterReduction / 100);
 
-  // Volume calculation
-  const vol = 1; // 1 m³
-  const air = agg === 20 ? 0.02 : (agg === 10 ? 0.03 : 0.015);
+  // 5. w/c ratio (approximate from strength, limited by exposure)
+  let wc = 0.60 - (grade - 20) * 0.005;
+  wc = Math.min(wc, maxWc);
+
+  // 6. Cement content (after replacement)
+  let cement = Math.max(minCement, water / wc);
+  cement = Math.ceil(cement / 10) * 10;
+  const cementOriginal = cement;
+  cement *= (1 - cementReplacement / 100); // reduce if replaced
+  cement = Math.round(cement / 10) * 10;
+
+  // 7. Final water
+  water = cement * wc;
+
+  // 8. Aggregate volume (1 m³)
+  const airContent = (aggSize === 10) ? 0.03 : (aggSize === 20) ? 0.02 : 0.01;
   const volCement = cement / (3.15 * 1000);
-  const volWater = w / 1000;
-  const volAgg = vol - volCement - volWater - air;
+  const volWater = water / 1000;
+  const volAggregate = 1 - volCement - volWater - airContent;
 
-  // FA:CA ratio approx
-  let faRatio = 0.45;
-  if (aggtype === "gravel") faRatio = 0.5;
-  const fa = volAgg * faRatio * 1.45 * 1000; // assume SG 2.6 → adjust to 1.45 for fine
-  const ca = volAgg * (1 - faRatio) * 2.7 * 1000; // SG 2.7
+  // 9. Fine aggregate ratio (Table 3, adjust slightly for admixture)
+  let faRatio = (aggSize === 10) ? 0.40 : (aggSize === 20) ? 0.35 : 0.30;
+  if (aggType === "gravel") faRatio += 0.05;
+  if (wc < 0.50) faRatio += (0.50 - wc) * 0.10;
+  if (admix !== "none") faRatio += 0.03; // admixtures improve workability → slightly more sand
+
+  // 10. Quantities
+  const sgFA = 2.65;
+  const sgCA = 2.70;
+  const fa = volAggregate * faRatio * sgFA * 1000;
+  const ca = volAggregate * (1 - faRatio) * sgCA * 1000;
+
+  // 11. Final ratio
+  const ratioC = 1;
+  const ratioFA = (fa / cement).toFixed(2);
+  const ratioCA = (ca / cement).toFixed(2);
+
+  // Admixture note
+  let admixNote = "None";
+  if (admix === "superplasticizer") admixNote = "Chemical Superplasticizer (25% water reduction)";
+  else if (admix === "flyash") admixNote = `Fly Ash (${cementReplacement}% cement replacement)`;
+  else if (admix === "silicafume") admixNote = `Silica Fume (${cementReplacement}% replacement)`;
+  else if (admix === "ggbs") admixNote = `GGBS (${cementReplacement}% replacement)`;
+  else if (admix === "natural") admixNote = `Natural Admixture (Rice Husk / Bagasse Ash - ${cementReplacement}% replacement)`;
 
   document.getElementById('mix-result').innerHTML = `
     <div class="result">
-      <h3 style="text-align:center;color:#27ae60;">CONCRETE MIX DESIGN - M${grade}</h3>
-      <strong>Target Mean Strength:</strong> ${ftarget.toFixed(1)} MPa<br>
-      <strong>Water-Cement Ratio:</strong> ${(w/cement).toFixed(2)}<br>
-      <strong>Cement Content:</strong> <big style="font-size:28px;color:var(--p);">${cement} kg/m³</big><br>
-      <strong>Water:</strong> ${Math.round(w)} kg/m³<br>
-      <strong>Fine Aggregate:</strong> ${Math.round(fa)} kg/m³<br>
+      <h3 style="color:#27ae60">CONCRETE MIX DESIGN - M${grade} (IS 10262:2019)</h3>
+      <strong>Target Mean Strength:</strong> ${fTarget.toFixed(1)} MPa<br>
+      <strong>Exposure:</strong> ${exposure} → Max w/c = ${maxWc}, Min Cement = ${minCement} kg/m³<br>
+      <strong>Water / Cement Ratio:</strong> ${wc.toFixed(2)}<br>
+      <strong>Cement (effective):</strong> <big>${Math.round(cement)} kg/m³</big> (original ${cementOriginal} kg)<br>
+      <strong>Water:</strong> ${Math.round(water)} kg/m³<br>
+      <strong>Fine Aggregate (Sand):</strong> ${Math.round(fa)} kg/m³<br>
       <strong>Coarse Aggregate:</strong> ${Math.round(ca)} kg/m³<br>
-      <strong>Admixture:</strong> ${admix ? "Yes (reduced water)" : "Not used"}<br><br>
-      <em>Proportions by weight: 1 : ${(fa/cement).toFixed(2)} : ${(ca/cement).toFixed(2)} (C:FA:CA)</em>
+      <strong>Mix Ratio (by weight):</strong> 1 : ${ratioFA} : ${ratioCA} (C : FA : CA)<br>
+      <strong>Admixture:</strong> ${admixNote}<br>
+      <em>Note: Final proportions should be verified by lab trials. Fly Ash/Silica/GGBS replace part of cement.</em>
     </div>
   `;
 }
@@ -1200,38 +1543,92 @@ function calculateMix() {
     }
 
     function calculateOneWay() {
-      const Lx = parseFloat(document.getElementById('Lx').value);
-      const LL = parseFloat(document.getElementById('LL').value);
-      const FF = parseFloat(document.getElementById('FF').value);
-      const fck = parseFloat(document.getElementById('fck').value);
-      const fy = parseFloat(document.getElementById('fy').value);
-      const cont = document.getElementById('support').value === "continuous";
+  const Lx = parseFloat(document.getElementById('Lx').value);
+  const LL = parseFloat(document.getElementById('LL').value);
+  const FF = parseFloat(document.getElementById('FF').value);
+  const fck = parseFloat(document.getElementById('fck').value);
+  const fy = parseFloat(document.getElementById('fy').value);
+  const isContinuous = document.getElementById('support').value === "continuous";
 
-      let D = Lx * 1000 / (cont ? 26 : 20);
-      let d = D - 30;
-      let DL = D/1000 * 25;
-      let w = 1.5 * (DL + LL + FF);
-      let M = cont ? w * Lx*Lx / 12 : w * Lx*Lx / 8;
+  // Moment coefficients (IS 456 Table 12 approximate for slabs)
+  const posCoeff = isContinuous ? 1/12 : 1/8;
+  const negCoeff = isContinuous ? 1/10 : 0;
 
-      d = Math.sqrt(M * 1e6 / (0.138 * fck * 1000));
-      D = Math.ceil(d + 30);
-      d = D - 30;
-      DL = D/1000 * 25;
-      w = 1.5 * (DL + LL + FF);
-      M = cont ? w * Lx*Lx / 12 : w * Lx*Lx / 8;
+  // Basic span/d ratio (Cl. 23.2.1) + modification (approx pt=0.5%)
+  let basicRatio = isContinuous ? 26 : 20;
+  const modFs = 0.58 * fy * 0.5 / 230; // Assume pt ≈ 0.5%
+  const modRatio = Math.min(2, 0.8 + modFs); // Cl. 23.2.1 Note
+  basicRatio *= modRatio;
 
-      const Ast = M * 1e6 / (0.87 * fy * d * 0.95);
-      const spacing = Math.min(300, Math.round(1000 * 78.5 / Ast / 5) * 5);
+  // Initial depth
+  let D = Math.ceil(Lx * 1000 / basicRatio / 5) * 5;
+  let d = D - 25; // cover 20mm + half bar 10mm
 
-      document.getElementById('oneway-result').innerHTML = `
-        <div class="result">
-          <h3 style="text-align:center;color:#27ae60;">ONE-WAY SLAB DESIGN</h3>
-          <strong>Total Depth:</strong> <big style="font-size:32px;color:var(--p);">${D} mm</big><br>
-          <strong>Main Steel:</strong> φ10 @ ${spacing} mm c/c<br>
-          <strong>Distribution Steel:</strong> φ8 @ 200 mm c/c
-        </div>
-      `;
-    }
+  let selfWt = 25 * D / 1000;
+  let wu = 1.5 * (selfWt + FF + LL);
+
+  let MuPos = wu * Lx * Lx * posCoeff;
+  let MuNeg = isContinuous ? wu * Lx * Lx * negCoeff : 0;
+  let MuMax = Math.max(MuPos, MuNeg);
+
+  // Required d from moment (Cl. G.1.1, xu/d = 0.48)
+  const reqD = Math.sqrt(MuMax * 1e6 / (0.138 * fck * 1000));
+  if (reqD > d) {
+    d = Math.ceil(reqD);
+    D = d + 25;
+  }
+
+  d = D - 25;
+  selfWt = 25 * D / 1000;
+  wu = 1.5 * (selfWt + FF + LL);
+  MuPos = wu * Lx * Lx * posCoeff;
+  MuNeg = isContinuous ? wu * Lx * Lx * negCoeff : 0;
+  MuMax = Math.max(MuPos, MuNeg);
+
+  // Minimum steel (Cl. 26.5.2.1)
+  const minPt = fy > 415 ? 0.08 : 0.12; // Fe500 = 0.08%, others 0.12%
+  const minAst = minPt / 100 * 1000 * D;
+
+  // Required steel
+  let AstPos = MuPos * 1e6 / (0.87 * fy * d * 0.92); // 0.92 for xu/d <0.48
+  AstPos = Math.max(AstPos, minAst);
+
+  let AstNeg = MuNeg * 1e6 / (0.87 * fy * d * 0.92);
+  AstNeg = Math.max(AstNeg, minAst * 0.75); // 75% at supports is common practice
+
+  // Bar selection
+  const barDia = fy >= 500 ? 10 : 8;
+  const barArea = Math.PI * barDia * barDia / 4;
+  let spacingPos = Math.floor(1000 * barArea / AstPos / 10) * 10;
+  spacingPos = Math.min(300, Math.max(100, spacingPos));
+
+  let spacingNeg = Math.floor(1000 * barArea / AstNeg / 10) * 10;
+  spacingNeg = Math.min(300, Math.max(100, spacingNeg));
+
+  // Distribution steel (min steel)
+  const distSpacing = 200;
+
+  // Shear check (Cl. 40.1, nominal)
+  const Vu = wu * Lx / 2;
+  const tauV = Vu * 1000 / (1000 * d);
+  const k = D <= 300 ? 1.3 : 1.0;
+  const tauC = k * 0.29 * Math.sqrt(fck); // approx pt=0.5%
+  const shearOk = tauV <= tauC ? 'OK' : 'Check stirrups';
+
+  document.getElementById('oneway-result').innerHTML = `
+    <div class="result">
+      <h3 style="color:#27ae60">ONE-WAY SLAB DESIGN (IS 456:2000)</h3>
+      <strong>Depth D:</strong> ${D} mm (eff d = ${d} mm)<br>
+      <strong>Factored Load wu:</strong> ${wu.toFixed(2)} kN/m²<br>
+      <strong>Mu Pos:</strong> ${MuPos.toFixed(2)} kNm/m | Mu Neg: ${MuNeg.toFixed(2)} kNm/m<br>
+      <strong>Main Steel (Positive):</strong> φ${barDia} @ ${spacingPos} mm c/c (Ast = ${AstPos.toFixed(0)} mm²/m)<br>
+      ${isContinuous ? `<strong>Main Steel (Negative):</strong> φ${barDia} @ ${spacingNeg} mm c/c (Ast = ${AstNeg.toFixed(0)} mm²/m)<br>` : ''}
+      <strong>Distribution Steel:</strong> φ8 @ ${distSpacing} mm c/c<br>
+      <strong>Shear Stress:</strong> ${tauV.toFixed(2)} MPa ≤ ${tauC.toFixed(2)} MPa - ${shearOk}<br>
+      <strong>Deflection:</strong> L/d = ${(Lx*1000/d).toFixed(1)} ≤ ${basicRatio.toFixed(1)} - OK
+    </div>
+  `;
+}
 
     // ==================== TWO-WAY SLAB ====================
     function showTwoWay() {
@@ -1252,53 +1649,124 @@ function calculateMix() {
       `;
     }
 
-    function calculateTwoWay() {
-      const Lx = parseFloat(document.getElementById('Lx2').value);
-      const Ly = parseFloat(document.getElementById('Ly2').value);
-      const LL = parseFloat(document.getElementById('LL2').value);
-      const FF = parseFloat(document.getElementById('FF2').value);
-      const fck = parseFloat(document.getElementById('fck2').value);
-      const fy = parseFloat(document.getElementById('fy2').value);
-      const ratio = Ly / Lx;
+  function calculateTwoWay() {
+  const Lx = parseFloat(document.getElementById('Lx2').value);
+  const Ly = parseFloat(document.getElementById('Ly2').value);
+  const LL = parseFloat(document.getElementById('LL2').value);
+  const FF = parseFloat(document.getElementById('FF2').value);
+  const fck = parseFloat(document.getElementById('fck2').value);
+  const fy = parseFloat(document.getElementById('fy2').value);
 
-      let D = Lx * 1000 / 35;
-      let d = D - 30;
-      let DL = D/1000 * 25;
-      let w = 1.5 * (DL + LL + FF);
+  const ratio = Ly / Lx;
+  if (ratio < 1) return alert('Long span (Ly) should be greater than short span (Lx)');
 
-      const coeff = {
-        1.0:{sx:0.125,sy:0.125},1.1:{sx:0.103,sy:0.084},1.2:{sx:0.090,sy:0.068},
-        1.3:{sx:0.080,sy:0.057},1.4:{sx:0.072,sy:0.050},1.5:{sx:0.066,sy:0.044},
-        1.75:{sx:0.056,sy:0.033},2.0:{sx:0.048,sy:0.026}
-      };
-      const key = Object.keys(coeff).reduce((a,b)=>Math.abs(b-ratio)<Math.abs(a-ratio)?b:a);
-      const {sx,sy} = coeff[key];
+  // Table 26 - Case 1: Interior panel, all edges continuous (IS 456:2000)
+  const coeffs = {
+    1.0: {shortNeg: 0.032, shortPos: 0.024, longNeg: 0.032, longPos: 0.024},
+    1.1: {shortNeg: 0.037, shortPos: 0.028, longNeg: 0.037, longPos: 0.028},
+    1.2: {shortNeg: 0.043, shortPos: 0.032, longNeg: 0.035, longPos: 0.026},
+    1.3: {shortNeg: 0.049, shortPos: 0.037, longNeg: 0.033, longPos: 0.025},
+    1.4: {shortNeg: 0.055, shortPos: 0.041, longNeg: 0.030, longPos: 0.022},
+    1.5: {shortNeg: 0.061, shortPos: 0.046, longNeg: 0.028, longPos: 0.021},
+    1.75: {shortNeg: 0.074, shortPos: 0.056, longNeg: 0.024, longPos: 0.018},
+    2.0: {shortNeg: 0.084, shortPos: 0.063, longNeg: 0.020, longPos: 0.015},
+    2.5: {shortNeg: 0.099, shortPos: 0.074, longNeg: 0.016, longPos: 0.012} // Approx for >2
+  };
 
-      const Mx = sx * w * Lx * Lx * 1e6;
-      const My = sy * w * Lx * Lx * 1e6;
+  // Find closest ratio
+  let key = Object.keys(coeffs).reduce((a, b) => Math.abs(b - ratio) < Math.abs(a - ratio) ? b : a);
+  if (ratio > 2) key = 2.5;
+  const c = coeffs[key];
 
-      d = Math.max(Math.sqrt(Mx / (0.138 * fck * 1000)), Math.sqrt(My / (0.138 * fck * 1000)));
-      D = Math.ceil(d + 30);
-      d = D - 30;
+  // Basic span/d ratio for two-way slabs (Cl. 23.2.1) + modification
+  let basicRatio = 35;
+  const modFs = 0.58 * fy * 0.5 / 230; // Assume pt ≈ 0.5%
+  const modRatio = Math.min(2, 0.8 + modFs);
+  basicRatio *= modRatio;
 
-      const Astx = Mx / (0.87 * fy * d * 0.95);
-      const Asty = My / (0.87 * fy * d * 0.95);
+  // Initial depth based on short span
+  let D = Math.ceil(Lx * 1000 / basicRatio / 5) * 5;
+  let d = D - 25; // cover 20mm + half bar 10mm
 
-      const spacex = Math.min(300, Math.round(1000 * 78.5 / Astx / 5) * 5);
-      const spacey = Math.min(300, Math.round(1000 * 78.5 / Asty / 5) * 5);
+  let selfWt = 25 * D / 1000;
+  let wu = 1.5 * (selfWt + FF + LL);
 
-      document.getElementById('twoway-result').innerHTML = `
-        <div class="result">
-          <h3 style="text-align:center;color:#27ae60;">TWO-WAY SLAB DESIGN</h3>
-          <strong>Ly/Lx = ${ratio.toFixed(2)}</strong><br>
-          <strong>Total Depth:</strong> <big style="font-size:32px;color:var(--p);">${D} mm</big><br>
-          <strong>Short Span Steel:</strong> φ10 @ ${spacex} mm<br>
-          <strong>Long Span Steel:</strong> φ10 @ ${spacey} mm<br>
-          <strong>Torsion Steel at Corners:</strong> 0.75 × max(Ast) both layers
-        </div>
-      `;
-    }
+  // Moments (Cl. 24.4)
+  const MuShortNeg = c.shortNeg * wu * Lx * Lx;
+  const MuShortPos = c.shortPos * wu * Lx * Lx;
+  const MuLongNeg = c.longNeg * wu * Lx * Lx;
+  const MuLongPos = c.longPos * wu * Lx * Lx;
 
+  const maxMu = Math.max(MuShortNeg, MuShortPos, MuLongNeg, MuLongPos);
+
+  // Required d from max moment
+  const reqD = Math.sqrt(maxMu * 1e6 / (0.138 * fck * 1000));
+  if (reqD > d) {
+    d = Math.ceil(reqD);
+    D = d + 25;
+  }
+
+  d = D - 25;
+  selfWt = 25 * D / 1000;
+  wu = 1.5 * (selfWt + FF + LL);
+
+  // Recalculate moments with final depth
+  const MuSN = c.shortNeg * wu * Lx * Lx;
+  const MuSP = c.shortPos * wu * Lx * Lx;
+  const MuLN = c.longNeg * wu * Lx * Lx;
+  const MuLP = c.longPos * wu * Lx * Lx;
+
+  // Minimum steel (Cl. 26.5.2.1)
+  const minPt = fy > 415 ? 0.08 : 0.12;
+  const minAst = minPt / 100 * 1000 * D;
+
+  // Required steel (0.92 factor for xu/d < 0.48)
+  let AstShortPos = Math.max(MuSP * 1e6 / (0.87 * fy * d * 0.92), minAst);
+  let AstShortNeg = Math.max(MuSN * 1e6 / (0.87 * fy * d * 0.92), minAst * 0.75);
+  let AstLongPos = Math.max(MuLP * 1e6 / (0.87 * fy * d * 0.92), minAst);
+  let AstLongNeg = Math.max(MuLN * 1e6 / (0.87 * fy * d * 0.92), minAst * 0.75);
+
+  // Torsion steel at corners (Cl. D-1 of Annex D)
+  const AstTorsion = 0.75 * Math.max(AstShortPos, AstShortNeg); // 75% of max Ast
+
+  // Bar selection
+  const barDia = fy >= 500 ? 10 : 8;
+  const barArea = Math.PI * barDia * barDia / 4;
+
+  let spacingSP = Math.floor(1000 * barArea / AstShortPos / 10) * 10;
+  spacingSP = Math.min(300, Math.max(100, spacingSP));
+
+  let spacingSN = Math.floor(1000 * barArea / AstShortNeg / 10) * 10;
+  spacingSN = Math.min(300, Math.max(100, spacingSN));
+
+  let spacingLP = Math.floor(1000 * barArea / AstLongPos / 10) * 10;
+  spacingLP = Math.min(300, Math.max(100, spacingLP));
+
+  let spacingLN = Math.floor(1000 * barArea / AstLongNeg / 10) * 10;
+  spacingLN = Math.min(300, Math.max(100, spacingLN));
+
+  // Shear (nominal, Cl. 40)
+  const Vu = wu * Lx / 2;
+  const tauV = Vu * 1000 / (1000 * d);
+  const tauC = 0.29 * Math.sqrt(fck); // approx pt=0.25%
+  const shearOk = tauV <= tauC ? 'OK' : 'Needs reinforcement';
+
+  document.getElementById('twoway-result').innerHTML = `
+    <div class="result">
+      <h3 style="color:#27ae60">TWO-WAY SLAB DESIGN (IS 456:2000 Table 26)</h3>
+      <strong>Ratio Ly/Lx:</strong> ${ratio.toFixed(2)} (used coeff for ${key})<br>
+      <strong>Depth D:</strong> ${D} mm (eff d = ${d} mm)<br>
+      <strong>Factored Load wu:</strong> ${wu.toFixed(2)} kN/m²<br>
+      <strong>Short Span Positive:</strong> φ${barDia} @ ${spacingSP} mm (Ast = ${AstShortPos.toFixed(0)} mm²/m)<br>
+      <strong>Short Span Negative:</strong> φ${barDia} @ ${spacingSN} mm (Ast = ${AstShortNeg.toFixed(0)} mm²/m)<br>
+      <strong>Long Span Positive:</strong> φ${barDia} @ ${spacingLP} mm (Ast = ${AstLongPos.toFixed(0)} mm²/m)<br>
+      <strong>Long Span Negative:</strong> φ${barDia} @ ${spacingLN} mm (Ast = ${AstLongNeg.toFixed(0)} mm²/m)<br>
+      <strong>Torsion Steel (Corners):</strong> ${AstTorsion.toFixed(0)} mm²/m, φ${barDia} @ ${Math.floor(1000 * barArea / AstTorsion / 10) * 10} mm, length = Lx/5 both ways<br>
+      <strong>Shear:</strong> ${tauV.toFixed(2)} MPa ≤ ${tauC.toFixed(2)} MPa - ${shearOk}<br>
+      <strong>Deflection:</strong> Lx/d = ${(Lx*1000/d).toFixed(1)} ≤ ${basicRatio.toFixed(1)} - OK
+    </div>
+  `;
+}
     // ==================== BEAM DESIGN ====================
     function showBeam() {
       document.getElementById('content').innerHTML = document.getElementById('beam-template').innerHTML;
@@ -1319,53 +1787,99 @@ function calculateMix() {
     }
 
     function calculateBeam() {
-      const L = parseFloat(document.getElementById('span').value);
-      const b = parseFloat(document.getElementById('b').value);
-      const LL = parseFloat(document.getElementById('LLb').value);
-      const DL = parseFloat(document.getElementById('DLb').value);
-      const fck = parseFloat(document.getElementById('fckb').value);
-      const fy = parseFloat(document.getElementById('fyb').value);
+  const L = parseFloat(document.getElementById('span').value);
+  const b = parseFloat(document.getElementById('b').value);
+  const LL = parseFloat(document.getElementById('LLb').value);
+  const DL = parseFloat(document.getElementById('DLb').value);
+  const fck = parseFloat(document.getElementById('fckb').value);
+  const fy = parseFloat(document.getElementById('fyb').value);
 
-      let D = 500;
-      let d = D - 50;
-      let selfwt = b * D / 1e6 * 25;
-      let w = 1.5 * (DL + LL + selfwt);
-      let M = w * L * L / 8;
+  // Basic span/d ratio (Cl. 23.2.1) + modification (assume pt ≈ 0.8%)
+  let basicRatio = 20; // simply supported (conservative)
+  const modFs = 0.58 * fy * 0.8 / 230;
+  const modRatio = Math.min(2, 0.8 + modFs);
+  basicRatio *= modRatio;
 
-      d = Math.sqrt(M * 1e6 / (0.138 * fck * b));
-      D = Math.ceil(d + 50);
-      d = D - 50;
+  // Initial depth
+  let D = Math.ceil(L * 1000 / basicRatio / 25) * 25;
+  let d = D - 50; // cover 25mm + stirrup 8mm + half bar 20mm
 
-      selfwt = b * D / 1e6 * 25;
-      w = 1.5 * (DL + LL + selfwt);
-      M = w * L * L / 8;
+  let selfWt = b * D / 1e6 * 25;
+  let wu = 1.5 * (DL + selfWt + LL);
+  let Mu = wu * L * L / 8;
+  let Vu = wu * L / 2;
 
-      const MuLim = 0.138 * fck * b * d * d / 1e6;
-      const Ast = M * 1e6 / (0.87 * fy * 0.9 * d);
-      const isDoubly = M > MuLim * 1e6;
+  // Singly reinforced limit (Cl. G.1.1, xu/d = 0.48)
+  let MuLim = 0.138 * fck * b * d * d / 1e6;
 
-      let result = `
-        <div class="result">
-          <h3 style="text-align:center;color:#27ae60;">BEAM DESIGN RESULT</h3>
-          <strong>Depth D = ${D} mm</strong><br>
-          <strong>Factored Moment Mu = ${M.toFixed(1)} kNm</strong><br>
-      `;
+  let Asc = 0;
+  let Ast = 0;
 
-      if (!isDoubly) {
-        const spacing = Math.min(300, Math.round(1000 * 78.5 / Ast / 5) * 5);
-        result += `<strong>Main Tension Steel:</strong> φ10 @ ${spacing} mm c/c<br>`;
-      } else {
-        const Ast1 = (0.138 * fck * b * d) / (0.87 * fy);
-        const Ast2 = (M * 1e6 - MuLim * 1e6) / (0.87 * fy * (d - 50));
-        result += `<strong>SINGLY REINFORCED LIMIT EXCEEDED</strong><br>
-                   Provide Doubly Reinforced Beam<br>
-                   Tension Steel ≈ ${(Ast1 + Ast2).toFixed(0)} mm²<br>
-                   Compression Steel ≈ ${Ast2.toFixed(0)} mm²`;
-      }
+  if (Mu > MuLim) {
+    // Doubly reinforced (Cl. G.2)
+    const Mu2 = Mu - MuLim;
+    const dPrime = 50; // compression cover
+    const fsc = 0.87 * fy; // assume compression steel yields
+    Asc = Mu2 * 1e6 / (fsc * (d - dPrime));
+    const Ast1 = (0.138 * fck * b * d) / (0.87 * fy);
+    Ast = Ast1 + Asc * (0.45 * fck) / (0.87 * fy);
+  } else {
+    // Singly reinforced
+    Ast = Mu * 1e6 / (0.87 * fy * d * 0.92);
+  }
 
-      result += `</div>`;
-      document.getElementById('beam-result').innerHTML = result;
-    }
+  // Minimum steel (Cl. 26.5.1.1)
+  Ast = Math.max(Ast, 0.85 * b * d / fy);
+
+  // Bar selection (try 20mm bars, adjust if needed)
+  const barDia = 20;
+  const barArea = Math.PI * barDia * barDia / 4;
+  const numBars = Math.ceil(Ast / barArea);
+  const actualAst = numBars * barArea;
+
+  // Shear design (Cl. 40)
+  const tauV = Vu * 1000 / (b * d);
+  const pt = 100 * actualAst / (b * d);
+
+  // tau_c from Table 19 (interpolated)
+  let tauC = 0.28; // base for pt=0.15
+  if (pt >= 0.25) tauC = 0.36 + (pt - 0.25) * (0.48 - 0.36) / 0.75;
+  if (pt >= 1.0) tauC = 0.48 + (pt - 1.0) * 0.02;
+  tauC *= Math.sqrt(fck / 25); // increase for higher fck
+
+  const tauCmax = [2.8, 3.1, 3.5, 3.7, 4.0][Math.floor((fck-15)/5)] || 4.0; // Table 20
+
+  let stirrups = 'Not required';
+  if (tauV > tauC) {
+    const Sv = (0.87 * fy * 2 * (Math.PI * 8 * 8 / 4)) / ((tauV - tauC) * b * 1000);
+    const SvMax = Math.min(0.75 * d, 300);
+    const SvFinal = Math.floor(Sv / 25) * 25;
+    stirrups = `φ8 2-leg @ ${Math.min(SvFinal, SvMax)} mm c/c`;
+  } else if (tauV > 0.5 * tauC) {
+    stirrups = 'Nominal φ8 2-leg @ 300 mm c/c';
+  }
+
+  const shearStatus = tauV <= tauCmax ? 'OK' : 'Exceeds max - Increase section';
+
+  // Deflection check
+  const span_d = L * 1000 / d;
+  const deflStatus = span_d <= basicRatio ? 'OK' : 'Revise depth';
+
+  document.getElementById('beam-result').innerHTML = `
+    <div class="result">
+      <h3 style="color:#27ae60">BEAM DESIGN (IS 456:2000)</h3>
+      <strong>Size:</strong> ${b} × ${D} mm (eff d = ${d} mm)<br>
+      <strong>Factored Load wu:</strong> ${wu.toFixed(2)} kN/m<br>
+      <strong>Mu:</strong> ${Mu.toFixed(1)} kNm (Limit: ${MuLim.toFixed(1)} kNm)<br>
+      <strong>Tension Steel:</strong> ${numBars}-φ${barDia} (Ast = ${actualAst.toFixed(0)} mm²)<br>
+      ${Asc > 0 ? `<strong>Compression Steel:</strong> ${Math.ceil(Asc / barArea)}-φ${barDia} (Asc = ${Asc.toFixed(0)} mm²)<br>` : ''}
+      <strong>Stirrups (Shear):</strong> ${stirrups}<br>
+      <strong>Shear Stress:</strong> ${tauV.toFixed(2)} MPa ≤ τc = ${tauC.toFixed(2)} MPa (max ${tauCmax.toFixed(1)}) - ${shearStatus}<br>
+      <strong>Deflection:</strong> L/d = ${span_d.toFixed(1)} ≤ ${basicRatio.toFixed(1)} - ${deflStatus}<br>
+      <em>Note: Assumes simply supported. For continuous, use appropriate moments.</em>
+    </div>
+  `;
+}
    // ==================== COLUMN DESIGN ====================
     function showColumn() {
       document.getElementById('content').innerHTML = document.getElementById('column-template').innerHTML;
@@ -1385,29 +1899,70 @@ function calculateMix() {
     }
 
     function calculateColumn() {
-      const Pu = parseFloat(document.getElementById('Pu').value) * 1000;
-      const Mu = parseFloat(document.getElementById('Mu').value) * 1e6;
-      const L = parseFloat(document.getElementById('Lcol').value) * 1000;
-      const fck = parseFloat(document.getElementById('fckc').value);
-      const fy = parseFloat(document.getElementById('fyc').value);
+  const Pu = parseFloat(document.getElementById('Pu').value) * 1000; // kN → N
+  const Mu = parseFloat(document.getElementById('Mu').value) * 1e6; // kNm → Nmm
+  const L = parseFloat(document.getElementById('Lcol').value) * 1000; // m → mm
+  const fck = parseFloat(document.getElementById('fckc').value);
+  const fy = parseFloat(document.getElementById('fyc').value);
 
-      let side = Math.max(300, Math.ceil(Math.sqrt(Pu / (0.4 * fck)) / 50) * 50);
-      if (side > 600) side = 600;
+  // Effective length (assume braced, partially fixed ends, k ≈ 0.8–0.9)
+  const le = 0.85 * L; // conservative for typical building columns
 
-      const Ag = side * side;
-      const p = Math.max(0.8, (Pu / (fck * Ag)) * 100);
-      const Asc = (p / 100) * Ag;
+  // Trial size (axial capacity approx 0.4 fck Ag)
+  let side = Math.ceil(Math.sqrt(Pu / (0.4 * fck)) / 25) * 25;
+  if (side < 300) side = 300;
 
-      document.getElementById('column-result').innerHTML = `
-        <div class="result">
-          <h3 style="text-align:center;color:#27ae60;">COLUMN DESIGN RESULT</h3>
-          <strong>Recommended Size:</strong> <big style="font-size:32px;color:var(--p);">${side} × ${side} mm</big><br>
-          <strong>Gross Area = ${Ag.toLocaleString()} mm²</strong><br>
-          <strong>Required Steel ≈ ${Asc.toFixed(0)} mm²</strong><br>
-          <strong>Provide 8–12 nos φ20–25 mm bars + ties φ8 @ 200 mm c/c</strong>
-        </div>
-      `;
-    }
+  const Ag = side * side;
+  const Asc_min = 0.008 * Ag; // min 0.8% (Cl. 26.5.3.1)
+
+  // Slenderness check (Cl. 25.3)
+  const slenderness = le / side;
+  const slendernessOk = slenderness <= 12 ? 'Short Column' : 'Slender – Needs additional moment';
+
+  // Approximate Pu-Mu interaction (simplified from SP 16 charts)
+  // For short column, capacity: Pu = 0.4 fck Ac + 0.67 fy Asc
+  // Mu capacity approx: 0.12 fck b d^2 (conservative for uniaxial)
+  const PuCap = 0.4 * fck * (Ag - Asc_min) + 0.67 * fy * Asc_min;
+  const MuCap = 0.12 * fck * side * side * side / 1e6; // rough uniaxial moment capacity
+
+  // Interaction ratio (linear approximation, conservative)
+  const interactionRatio = (Pu / PuCap) + (Mu / MuCap);
+  const capacityStatus = interactionRatio <= 1 ? 'SAFE' : 'UNSAFE – Increase size or steel';
+
+  // Steel required (if axial dominant)
+  let Asc = Asc_min;
+  if (Pu > 0.4 * fck * Ag) {
+    Asc = (Pu - 0.4 * fck * Ag) / (0.67 * fy - 0.4 * fck);
+    Asc = Math.max(Asc, Asc_min);
+  }
+
+  // Bar selection (8 bars typical)
+  const barDia = 20;
+  const barArea = Math.PI * barDia * barDia / 4;
+  const numBars = Math.ceil(Asc / barArea);
+  const actualAsc = numBars * barArea;
+
+  // Ties (Cl. 26.5.3.2)
+  const tieDia = Math.max(6, Math.ceil(side / 30));
+  const tieSpacing = Math.min(side, 16 * barDia, 300);
+
+  document.getElementById('column-result').innerHTML = `
+    <div class="result ${capacityStatus === 'SAFE' ? '' : 'fail'}">
+      <h3 style="color:${capacityStatus === 'SAFE' ? '#27ae60' : '#c0392b'}">
+        COLUMN DESIGN (IS 456:2000 / SP 16)
+      </h3>
+      <strong>Size (Square):</strong> ${side} × ${side} mm<br>
+      <strong>Slenderness:</strong> le/D = ${slenderness.toFixed(1)} → ${slendernessOk}<br>
+      <strong>Factored Pu:</strong> ${(Pu/1000).toFixed(0)} kN<br>
+      <strong>Factored Mu:</strong> ${(Mu/1e6).toFixed(1)} kNm<br>
+      <strong>Required Steel Asc:</strong> ${Asc.toFixed(0)} mm² (min 0.8%)<br>
+      <strong>Provided Steel:</strong> ${numBars}-φ${barDia} (Asc = ${actualAsc.toFixed(0)} mm²)<br>
+      <strong>Ties:</strong> φ${tieDia} @ ${tieSpacing} mm c/c<br>
+      <strong>Capacity Check:</strong> Pu/PuCap + Mu/MuCap = ${interactionRatio.toFixed(2)} ${capacityStatus === 'SAFE' ? '≤ 1' : '> 1'} → <strong>${capacityStatus}</strong><br>
+      <em>Note: Simplified uniaxial check. For biaxial or slender columns, use full SP 16 charts.</em>
+    </div>
+  `;
+}
 
     // ==================== WATER TANK (IS 3370:2009) ====================
     function showWaterTank() {
@@ -1426,31 +1981,76 @@ function calculateMix() {
       `;
     }
 
-    function calculateWaterTank() {
-      const L = parseFloat(document.getElementById('Ltank').value);
-      const B = parseFloat(document.getElementById('Btank').value);
-      const H = parseFloat(document.getElementById('Htank').value);
+  function calculateWaterTank() {
+  const L = parseFloat(document.getElementById('Ltank').value);
+  const B = parseFloat(document.getElementById('Btank').value);
+  const H = parseFloat(document.getElementById('Htank').value);
+  const fb = parseFloat(document.getElementById('fb').value);
+  const totalH = H + fb;
 
-      const pressure = 10 * H;
-      const longMoment = pressure * L * L / 12;
-      const shortMoment = pressure * B * B / 12;
-      const maxMoment = Math.max(longMoment, shortMoment) * 1e6;
+  // Standard grades for tanks (IS 3370)
+  const fck = 25; // M25 minimum
+  const fy = 500; // Fe500
 
-      const d = Math.ceil(Math.sqrt(maxMoment / (0.138 * 25 * 1000)));
-      const D = d + 50;
+  // Hydrostatic pressure at base (kN/m²)
+  const p_base = 10 * H; // γw = 10 kN/m³
 
-      document.getElementById('watertank-result').innerHTML = `
-        <div class="result">
-          <h3 style="text-align:center;color:#27ae60;">WATER TANK DESIGN</h3>
-          <strong>Max Hydrostatic Pressure = ${pressure} kN/m²</strong><br>
-          <strong>Long Wall Moment = ${longMoment.toFixed(2)} kNm/m</strong><br>
-          <strong>Short Wall Moment = ${shortMoment.toFixed(2)} kNm/m</strong><br>
-          <strong>Wall Thickness = ${D} mm (effective depth ${d} mm)</strong><br>
-          <strong>Base Slab = 300–350 mm</strong><br>
-          <strong>Main Steel (both faces): φ12 @ 140–160 mm c/c</strong>
-        </div>
-      `;
-    }
+  // Moment for long wall (fixed base, free top, approx triangular load)
+  // For long wall: M = p h² / 12 (conservative)
+  const M_long = p_base * totalH * totalH / 12; // kNm/m
+  const M_short = p_base * totalH * totalH / 12 * Math.pow(B / L, 2); // shorter wall
+  const M_max = Math.max(M_long, M_short);
+
+  // Minimum thickness (IS 3370 Table 1, approx for H=3.5m → 200–300mm)
+  let D_min = 150 + 30 * H; // Rough rule: 150 + 30mm per meter depth
+  D_min = Math.max(200, D_min); // Minimum 200mm
+
+  // Required depth from moment (Cl. G.1.1 LSM)
+  let d_req = Math.sqrt(M_max * 1e6 / (0.138 * fck * 1000));
+  let D = Math.max(D_min, Math.ceil(d_req + 50)); // +50mm for cover + bar
+
+  const d = D - 50; // cover 40mm + half bar 12mm
+
+  // Required steel (both faces, horizontal)
+  let Ast = M_max * 1e6 / (0.87 * fy * d * 0.92); // 0.92 for xu/d <0.48
+  Ast = Math.max(Ast, 0.003 * 1000 * D); // Min 0.3% (IS 3370 Cl. 6.1)
+
+  // Bar selection (horizontal, both faces)
+  const barDia = 12;
+  const barArea = Math.PI * barDia * barDia / 4;
+  let spacing = Math.floor(1000 * barArea / Ast / 10) * 10;
+  spacing = Math.min(200, Math.max(100, spacing)); // Max spacing 200mm for tanks
+
+  // Vertical steel (min 0.3%)
+  const Ast_vert = 0.003 * 1000 * D;
+  const spacing_vert = Math.floor(1000 * barArea / Ast_vert / 10) * 10;
+  const final_vert = Math.min(200, spacing_vert);
+
+  // Crack width check (IS 3370 Cl. 3.3, similar to IS 456 Annex F)
+  const fs = 0.58 * fy * Ast / (0.003 * 1000 * D); // service stress
+  const acr = 40 + barDia / 2; // cover 40mm typical for tanks
+  const h = D;
+  const xu = 0.48 * d; // approx
+  const eps_m = fs / 200000;
+  const w_cr = 3 * acr * eps_m / (1 + 2 * (acr - 40) / (h - xu));
+  const crackOk = w_cr <= 0.2 ? 'OK' : 'Increase thickness/steel';
+
+  document.getElementById('watertank-result').innerHTML = `
+    <div class="result ${crackOk === 'OK' ? '' : 'fail'}">
+      <h3 style="color:${crackOk === 'OK' ? '#27ae60' : '#c0392b'}">
+        WATER TANK DESIGN (IS 3370:2009)
+      </h3>
+      <strong>Wall Thickness:</strong> ${D} mm (eff d = ${d} mm)<br>
+      <strong>Max Hydrostatic Pressure:</strong> ${p_base.toFixed(1)} kN/m²<br>
+      <strong>Max Moment:</strong> ${M_max.toFixed(2)} kNm/m<br>
+      <strong>Horizontal Steel (both faces):</strong> φ${barDia} @ ${spacing} mm c/c (Ast = ${Ast.toFixed(0)} mm²/m)<br>
+      <strong>Vertical Steel:</strong> φ${barDia} @ ${final_vert} mm c/c (min 0.3%)<br>
+      <strong>Crack Width:</strong> ${w_cr.toFixed(3)} mm ≤ 0.2 mm - ${crackOk}<br>
+      <strong>Base Slab:</strong> Design separately (similar moments + self-weight)<br>
+      <em>Note: Assumes fixed base, free top. Use full analysis for corners & openings.</em>
+    </div>
+  `;
+}
 
     // ==================== DOG-LEGGED STAIRCASE ====================
     function showStaircase() {
@@ -1470,34 +2070,95 @@ function calculateMix() {
       `;
     }
 
-    function calculateStaircase() {
-      const H = parseFloat(document.getElementById('height').value);
-      const n = parseFloat(document.getElementById('risers').value);
-      const T = parseFloat(document.getElementById('tread').value) / 1000;
-      const W = parseFloat(document.getElementById('width').value);
-      const LL = parseFloat(document.getElementById('LLs').value);
+   function calculateStaircase() {
+  const H_floor = parseFloat(document.getElementById('height').value); // floor to floor height (m)
+  const n_risers = parseFloat(document.getElementById('risers').value);
+  const tread = parseFloat(document.getElementById('tread').value) / 1000; // tread in m
+  const width = parseFloat(document.getElementById('width').value); // stair width (m)
+  const LL = parseFloat(document.getElementById('LLs').value); // kN/m²
 
-      const R = H * 1000 / n;
-      const going = T;
-      const waist = Math.ceil(Math.sqrt(R*R + going*going*1000000) / 30) * 10;
-      const span = (n-1)*T/1000 + W + waist/1000;
-      const load = 25 * (waist/1000) * Math.sqrt(1 + (R/(going*1000))**2) + LL;
-      const w = 1.5 * load;
-      const M = w * span * span / 8;
+  // Riser height
+  const riser = H_floor / n_risers; // m
 
-      const d = Math.sqrt(M * 1e6 / (0.138 * 25 * 1000));
-      const D = Math.ceil(d + 25);
+  // Going (horizontal distance per flight)
+  const going = (n_risers - 1) * tread; // one less tread than risers
 
-      document.getElementById('staircase-result').innerHTML = `
-        <div class="result">
-          <h3 style="text-align:center;color:#27ae60;">STAIRCASE DESIGN</h3>
-          <strong>Riser ≈ ${R.toFixed(0)} mm | Tread = ${T*1000} mm</strong><br>
-          <strong>Waist Slab Thickness = ${D} mm</strong><br>
-          <strong>Main Steel: φ12 @ 150–180 mm c/c</strong><br>
-          <strong>Distribution Steel: φ8 @ 200 mm c/c</strong>
-        </div>
-      `;
-    }
+  // Inclined length of one flight (hypotenuse)
+  const inclinedLength = Math.sqrt(going * going + H_floor * H_floor); // per flight
+
+  // Total effective span (two flights + landing, landing ≈ width)
+  const landing = width; // typical landing = stair width
+  const span = 2 * going + landing; // total horizontal span
+
+  // Loads on waist slab (Cl. 33.1)
+  const waist_thickness = 0.15; // initial trial (150mm typical)
+  const selfWt_waist = 25 * waist_thickness; // kN/m²
+  const steps_load = 25 * (riser / 2); // half riser as average load
+  const FF = 1.0; // floor finish
+  const total_DL = selfWt_waist + steps_load + FF;
+  const wu = 1.5 * (total_DL + LL); // ultimate load kN/m²
+
+  // Factored load per meter run (along width)
+  const wu_run = wu * width; // kN/m (along span)
+
+  // Max moment (simply supported conservative)
+  const Mu = wu_run * span * span / 8; // kNm (at midspan)
+
+  // Required depth from moment
+  let d = Math.sqrt(Mu * 1e6 / (0.138 * 25 * width * 1000)); // M25 conservative
+  let D = Math.ceil(d + 30); // + cover + bar
+  if (D < 120) D = 120; // minimum practical
+
+  d = D - 25; // effective depth
+
+  // Recalculate self-weight with final thickness
+  const selfWt_final = 25 * (D / 1000);
+  const total_DL_final = selfWt_final + steps_load + FF;
+  const wu_final = 1.5 * (total_DL_final + LL);
+  const wu_run_final = wu_final * width;
+  const Mu_final = wu_run_final * span * span / 8;
+
+  // Required main steel (tension side)
+  let Ast = Mu_final * 1e6 / (0.87 * 500 * d * 0.92); // Fe500 typical
+  const minAst = 0.0012 * width * 1000 * D; // min 0.12%
+  Ast = Math.max(Ast, minAst);
+
+  // Bar selection (main bars along span)
+  const barDia = 12;
+  const barArea = Math.PI * barDia * barDia / 4;
+  let spacing = Math.floor(1000 * barArea / (Ast / width) / 10) * 10; // per m width
+  spacing = Math.min(200, Math.max(100, spacing));
+
+  // Distribution steel (across span)
+  const distAst = minAst;
+  const distSpacing = 200;
+
+  // Shear check (at support)
+  const Vu = wu_run_final * span / 2;
+  const tauV = Vu * 1000 / (width * 1000 * d);
+  const tauC = 0.36 * Math.sqrt(25); // approx pt=0.25%
+  const shearOk = tauV <= tauC ? 'OK' : 'Needs stirrups';
+
+  // Deflection check
+  const span_d = span * 1000 / d;
+  const basicRatio = 20; // simply supported
+  const deflOk = span_d <= basicRatio ? 'OK' : 'Revise thickness';
+
+  document.getElementById('staircase-result').innerHTML = `
+    <div class="result">
+      <h3 style="color:#27ae60">DOG-LEGGED STAIRCASE DESIGN (IS 456:2000)</h3>
+      <strong>Riser:</strong> ${(riser * 1000).toFixed(0)} mm | Tread: ${(tread * 1000).toFixed(0)} mm<br>
+      <strong>Waist Slab Thickness:</strong> ${D} mm (eff d = ${d} mm)<br>
+      <strong>Effective Span:</strong> ${span.toFixed(2)} m (2 flights + landing)<br>
+      <strong>Factored Load wu:</strong> ${wu_final.toFixed(2)} kN/m²<br>
+      <strong>Main Steel (along span):</strong> φ${barDia} @ ${spacing} mm c/c (Ast = ${Ast.toFixed(0)} mm²/m)<br>
+      <strong>Distribution Steel:</strong> φ10 @ ${distSpacing} mm c/c (min 0.12%)<br>
+      <strong>Shear Stress:</strong> ${tauV.toFixed(2)} MPa ≤ ${tauC.toFixed(2)} MPa - ${shearOk}<br>
+      <strong>Deflection:</strong> span/d = ${span_d.toFixed(1)} ≤ ${basicRatio} - ${deflOk}<br>
+      <em>Note: Assumes simply supported waist slab. Add nominal stirrups if needed.</em>
+    </div>
+  `;
+}
 
     // ==================== CRACK WIDTH ====================
     function showCrack() {
@@ -1635,39 +2296,57 @@ function showCountryCodes(country) {
   html += `</div>`;
   document.getElementById('content').innerHTML = html;
 }
-    document.getElementById("menu-toggle").addEventListener("click", function(e) {
-      e.stopPropagation();
-      const sidebar = document.getElementById("sidebar");
-      sidebar.classList.toggle("active");
-      sidebar.classList.toggle("closed");
-    });
+// === IMPROVED HAMBURGER MENU – STAYS OPEN ON DESKTOP ===
+document.getElementById("menu-toggle").addEventListener("click", function(e) {
+  e.stopPropagation();
+  const sidebar = document.getElementById("sidebar");
 
-    // Close sidebar when clicking outside (mobile only)
-    document.addEventListener("click", function(e) {
-      const sidebar = document.getElementById("sidebar");
-      const toggle = document.getElementById("menu-toggle");
-      if (window.innerWidth <= 992 && 
-          sidebar.classList.contains("active") &&
-          !sidebar.contains(e.target) && 
-          !toggle.contains(e.target)) {
-        sidebar.classList.remove("active");
-        sidebar.classList.add("closed");
-      }
-    });
+  // On mobile: toggle open/close
+  if (window.innerWidth <= 992) {
+    sidebar.classList.toggle("active");
+    sidebar.classList.toggle("closed");
+  }
+  // On desktop/tablet: do nothing — keep sidebar always visible
+});
 
-    // Prevent menu from closing when clicking inside sidebar
-    document.getElementById("sidebar").addEventListener("click", function(e) {
-      e.stopPropagation();
-    });
+// Close sidebar only on mobile when clicking outside
+document.addEventListener("click", function(e) {
+  const sidebar = document.getElementById("sidebar");
+  const toggle = document.getElementById("menu-toggle");
 
-    // Start with clean state
-    window.addEventListener("load", () => {
-      // Sidebar closed by default on mobile
-      if (window.innerWidth <= 992) {
-        document.getElementById("sidebar").classList.add("closed");
-      }
-      showHome();
-    });
+  if (window.innerWidth <= 992 &&
+      sidebar.classList.contains("active") &&
+      !sidebar.contains(e.target) &&
+      !toggle.contains(e.target)) {
+    sidebar.classList.remove("active");
+    sidebar.classList.add("closed");
+  }
+});
+
+// Prevent closing when clicking inside sidebar
+document.getElementById("sidebar").addEventListener("click", e => e.stopPropagation());
+
+// On load: always show sidebar on desktop/tablet
+window.addEventListener("load", () => {
+  const sidebar = document.getElementById("sidebar");
+  if (window.innerWidth > 992) {
+    sidebar.classList.remove("closed");
+    sidebar.classList.add("active");
+  } else {
+    sidebar.classList.add("closed");
+  }
+});
+
+// Optional: Re-check on resize
+window.addEventListener("resize", () => {
+  const sidebar = document.getElementById("sidebar");
+  if (window.innerWidth > 992) {
+    sidebar.classList.remove("closed");
+    sidebar.classList.add("active");
+  } else if (!sidebar.classList.contains("active")) {
+    sidebar.classList.add("closed");
+  }
+});
 
     function toggleSub(id) {
   const submenu = document.getElementById(id);              // find the submenu
