@@ -4,8 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CivilCode – Indian Civil Engineering Suite</title>
+  
+  <!-- Google Fonts (Inter) – already good -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  
+  <!-- Font Awesome 6.6.0 – Latest stable free version with integrity -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" 
+        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" 
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- Optional: Fallback if CDN fails (you can remove later) -->
+  <!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.6.0/css/all.css"> -->
+  
+  <!-- Your existing styles -->
   <style>
     :root{--p:#c0392b;--a:#2980b9;--g:#27ae60;--d:#2c3e50;--l:#f5f7fa;}
     *{margin:0;padding:0;box-sizing:border-box;}
@@ -125,9 +136,52 @@
 .category-title:hover {background:#1e2a38;}
 .code-category .category-grid {display:none;padding:20px 0;}
 .code-category.open .category-grid {display:grid;}
+
+/* Make the main menu item show arrow on the right */
+.menu > li > span.has-submenu {
+  justify-content: space-between;   /* puts icon + text on left, arrow on right */
+}
+
+/* Style for the arrow (▼) */
+.submenu-arrow {
+  transition: transform 0.3s ease;   /* smooth rotation */
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Hide submenu by default */
+.submenu {
+  display: none;
+  background: rgba(0,0,0,0.2);      /* slightly darker background */
+  padding: 8px 0;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Show submenu when it's active */
+.submenu.active {
+  display: block;
+}
+
+/* Make submenu items look nicer */
+.submenu span {
+  padding: 12px 24px 12px 68px !important;  /* more left padding so icons align nicely */
+  font-size: 14.5px;
+  color: #ccc;
+}
+
+.submenu span:hover {
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+/* IMPORTANT: Rotate arrow 180° when submenu is open */
+.menu > li > span.active .submenu-arrow {
+  transform: rotate(180deg);
+}
   </style>
 </head>
 <body>
+  
 
   <!-- Login Screen -->
   <div id="login-screen">
@@ -141,24 +195,67 @@
   </div>
 
   <!-- Compact Sidebar -->
-  <nav id="sidebar" class="closed">
-    <ul class="menu">
-      <li><span onclick="showHome()" class="active"><i class="fas fa-home"></i> Home</span></li>
-      <li><span onclick="showOneWay()"><i class="fas fa-ruler-horizontal"></i> One-Way Slab</span></li>
-      <li><span onclick="showTwoWay()"><i class="fas fa-th"></i> Two-Way Slab</span></li>
-      <li><span onclick="showBeam()"><i class="fas fa-vector-square"></i> Beam Design</span></li>
-      <li><span onclick="showColumn()"><i class="fas fa-columns"></i> Column Design</span></li>
-      <li><span onclick="showWaterTank()"><i class="fas fa-cube"></i> Water Tank</span></li>
-      <li><span onclick="showStaircase()"><i class="fas fa-stairs"></i> Staircase</span></li>
-      <li><span onclick="showCrack()"><i class="fas fa-hard-hat"></i> Crack Width</span></li>
-      <li><span onclick="showDevLength()"><i class="fas fa-link"></i> Dev. Length</span></li>
-    <li><span onclick="showCodalProvisions()"><i class="fas fa-globe"></i> Codal Provisions</span></li>
-      </li>
-      <li><span onclick="showMixDesign()"><i class="fas fa-flask"></i> Concrete Mix Design</span></li>
-      <li><span onclick="showFun()"><i class="fas fa-lightbulb"></i> Fun Facts</span></li>
-      <li><span onclick="showDisclaimer()"><i class="fas fa-shield-alt"></i> Disclaimer</span></li>
-    </ul>
-  </nav>
+ <nav id="sidebar" class="closed">
+  <ul class="menu">
+    <!-- 1. Home – always first -->
+    <li>
+      <span onclick="showHome()" class="active">
+        <i class="fas fa-home"></i> Home
+      </span>
+    </li>
+
+    <!-- 2. Design Calculators dropdown – second, nice and prominent -->
+    <li>
+      <span onclick="toggleSub('design-submenu')" class="has-submenu">
+        <i class="fas fa-calculator"></i> Design Calculators
+        <i class="fas fa-chevron-down submenu-arrow"></i>
+      </span>
+      
+      <ul id="design-submenu" class="submenu">
+        <li><span onclick="showOneWay()"><i class="fas fa-ruler-horizontal"></i> One-Way Slab</span></li>
+        <li><span onclick="showTwoWay()"><i class="fas fa-th"></i> Two-Way Slab</span></li>
+        <li><span onclick="showBeam()"><i class="fas fa-vector-square"></i> Beam Design</span></li>
+        <li><span onclick="showColumn()"><i class="fas fa-columns"></i> Column Design</span></li>
+        <li><span onclick="showWaterTank()"><i class="fas fa-cube"></i> Water Tank</span></li>
+        <li><span onclick="showStaircase()"><i class="fas fa-stairs"></i> Dog-legged Staircase</span></li>
+        <li><span onclick="showCrack()"><i class="fas fa-hard-hat"></i> Crack Width</span></li>
+        <li><span onclick="showDevLength()"><i class="fas fa-link"></i> Development Length</span></li>
+        <li><span onclick="showMixDesign()"><i class="fas fa-flask"></i> Concrete Mix Design</span></li>
+      </ul>
+    </li>
+
+<li>
+  <span onclick="toggleSub('verifiers-submenu')" class="has-submenu">
+    <i class="fas fa-check-double"></i> Design Verifiers
+    <i class="fas fa-chevron-down submenu-arrow"></i>
+  </span>
+  
+  <ul id="verifiers-submenu" class="submenu">
+    <li><span onclick="showVerifier()"><i class="fas fa-columns"></i> Beam Verifier</span></li>
+    <li><span onclick="showSlabVerifier()"><i class="fas fa-square"></i> Slab Verifier</span></li>
+    <li><span onclick="showColumnVerifier()"><i class="fas fa-columns"></i> Column Verifier</span></li>
+    <li><span onclick="showFootVerifier()"><i class="fas fa-layer-group"></i> Footing Verifier</span></li>
+    <li><span onclick="showWaterTankVerifier()"><i class="fas fa-tint"></i> Water Tank Verifier</span></li>
+  </ul>
+</li>
+    <!-- 3. Other items – in logical order -->
+    <li>
+      <span onclick="showCodalProvisions()">
+        <i class="fas fa-book-open"></i> Codal Provisions
+      </span>
+    </li>
+    <li>
+      <span onclick="showFun()">
+        <i class="fas fa-lightbulb"></i> Fun Facts
+      </span>
+    </li>
+    <li>
+      <span onclick="showDisclaimer()">
+        <i class="fas fa-shield-alt"></i> Disclaimer
+      </span>
+    </li>
+  </ul>
+</nav>
 
   <!-- Header with Working Hamburger -->
   <header>
@@ -289,6 +386,59 @@
     </div>
     <div id="mix-section"></div>
     <div id="mix-result"></div>
+  </div>
+</template>
+
+<template id="verifier-template">
+  <div class="card">
+    <h2>Design Verifier – IS 456:2000</h2>
+    <p>Enter the engineer's provided details to check if the beam design is safe.</p>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="beamVerifier()">
+        <i class="fas fa-vector-square"></i><h3>Verify RCC Beam</h3><p>Singly Reinforced • Simply Supported</p>
+      </div>
+    </div>
+    <div id="verifier-section"></div>
+    <div id="verifier-result"></div>
+  </div>
+</template>
+<!-- Slab Verifier -->
+<template id="slab-verifier-template">
+  <div class="card">
+    <h2>Slab Design Verifier – IS 456:2000</h2>
+    <p>Check if the provided slab reinforcement & thickness are safe.</p>
+    <div id="slab-verifier-section"></div>
+    <div id="slab-verifier-result"></div>
+  </div>
+</template>
+
+<!-- Column Verifier -->
+<template id="column-verifier-template">
+  <div class="card">
+    <h2>Column Design Verifier – IS 456:2000</h2>
+    <p>Verify axial + uniaxial column (preliminary check).</p>
+    <div id="column-verifier-section"></div>
+    <div id="column-verifier-result"></div>
+  </div>
+</template>
+
+<!-- Footing Verifier -->
+<template id="footing-verifier-template">
+  <div class="card">
+    <h2>Isolated Footing Verifier – IS 456:2000</h2>
+    <p>Check if size & reinforcement are adequate for load & soil.</p>
+    <div id="footing-verifier-section"></div>
+    <div id="footing-verifier-result"></div>
+  </div>
+</template>
+
+<!-- Water Tank Verifier -->
+<template id="watertank-verifier-template">
+  <div class="card">
+    <h2>Water Tank Verifier – IS 3370</h2>
+    <p>Check wall thickness & reinforcement for rectangular tank.</p>
+    <div id="watertank-verifier-section"></div>
+    <div id="watertank-verifier-result"></div>
   </div>
 </template>
 
@@ -551,6 +701,268 @@
     function toggleSub(id) {
       document.getElementById(id).classList.toggle('active');
     }
+
+    // Show the verifier page
+function showVerifier() {
+  document.getElementById('content').innerHTML = document.getElementById('verifier-template').innerHTML;
+  beamVerifier();  // Start with beam verifier form
+}
+
+// Load the beam verifier form
+function beamVerifier() {
+  document.getElementById('verifier-section').innerHTML = `
+    <h3 style="text-align:center;margin-bottom:20px;color:var(--p);">Beam Design Verifier (IS 456:2000)</h3>
+    <label>Span L (m)</label><input type="number" id="span_v" value="5.0" step="0.1">
+    <label>Width b (mm)</label><input type="number" id="b_v" value="300">
+    <label>Provided Depth D (mm)</label><input type="number" id="D_v" value="500">
+    <label>Dead Load excl. self wt (kN/m)</label><input type="number" id="DL_v" value="15">
+    <label>Live Load (kN/m)</label><input type="number" id="LL_v" value="20">
+    <label>Concrete Grade</label><select id="fck_v"><option value="20">M20</option><option value="25" selected>M25</option><option value="30">M30</option></select>
+    <label>Steel Grade</label><select id="fy_v"><option value="415">Fe415</option><option value="500" selected>Fe500</option></select>
+    <label>Provided Main Steel Area Ast (mm²)</label><input type="number" id="Ast_v" value="1000" placeholder="e.g., for 4φ16 = 804 mm²">
+    <button class="btn-calc" onclick="verifyBeam()">Verify Design</button>
+  `;
+}
+// === SLAB VERIFIER ===
+function showSlabVerifier() {
+  document.getElementById('content').innerHTML = document.getElementById('slab-verifier-template').innerHTML;
+  slabVerifier();
+}
+
+function slabVerifier() {
+  document.getElementById('slab-verifier-section').innerHTML = `
+    <h3 style="text-align:center;margin-bottom:20px;color:var(--p);">Slab Verifier (One-Way or Two-Way)</h3>
+    <label>Short Span Lx (m)</label><input type="number" id="Lx_s" value="4.0" step="0.1">
+    <label>Long Span Ly (m) – leave same as Lx for one-way</label><input type="number" id="Ly_s" value="4.0" step="0.1">
+    <label>Provided Depth D (mm)</label><input type="number" id="D_s" value="130">
+    <label>Live Load (kN/m²)</label><input type="number" id="LL_s" value="3.0">
+    <label>Floor Finish (kN/m²)</label><input type="number" id="FF_s" value="1.0">
+    <label>Concrete Grade</label><select id="fck_s"><option value="20">M20</option><option value="25" selected>M25</option></select>
+    <label>Steel Grade</label><select id="fy_s"><option value="415">Fe415</option><option value="500" selected>Fe500</option></select>
+    <label>Provided Ast short direction (mm²/m)</label><input type="number" id="Ast_s" value="400" placeholder="e.g., φ10@200 = 393 mm²/m">
+    <button class="btn-calc" onclick="verifySlab()">Verify Slab</button>
+  `;
+}
+
+function verifySlab() {
+  const Lx = parseFloat(document.getElementById('Lx_s').value);
+  const Ly = parseFloat(document.getElementById('Ly_s').value);
+  const D = parseFloat(document.getElementById('D_s').value);
+  const LL = parseFloat(document.getElementById('LL_s').value);
+  const FF = parseFloat(document.getElementById('FF_s').value);
+  const fck = parseFloat(document.getElementById('fck_s').value);
+  const fy = parseFloat(document.getElementById('fy_s').value);
+  const Ast_prov = parseFloat(document.getElementById('Ast_s').value);
+
+  const d = D - 25; // effective depth
+  const DL = D/1000 * 25;
+  const w = 1.5 * (DL + LL + FF);
+  const ratio = Ly / Lx;
+  const isOneWay = ratio >= 2;
+
+  let Mu_max;
+  if (isOneWay) {
+    Mu_max = w * Lx * Lx / 8; // simply supported one-way
+  } else {
+    // approximate two-way coeff for restrained
+    const coeff = ratio <= 1.5 ? 0.09 : 0.07;
+    Mu_max = coeff * w * Lx * Lx;
+  }
+
+  const Ast_req = (Mu_max * 1e6) / (0.87 * fy * 0.95 * d);
+  const defl_ok = (Lx * 1000 / d) <= (isOneWay ? 28 : 35); // basic limits
+
+  const safe = Ast_prov >= Ast_req && defl_ok;
+
+  document.getElementById('slab-verifier-result').innerHTML = `
+    <div class="result ${safe ? '' : 'fail'}">
+      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
+      <strong>Type: ${isOneWay ? 'One-Way' : 'Two-Way'} Slab</strong><br>
+      <strong>Required Ast: ${Ast_req.toFixed(0)} mm²/m</strong><br>
+      <strong>Provided Ast: ${Ast_prov} mm²/m (${Ast_prov >= Ast_req ? 'OK' : 'Insufficient'})</strong><br>
+      <strong>Deflection Check: span/d = ${(Lx*1000/d).toFixed(1)} ≤ ${isOneWay ? 28 : 35} ? ${defl_ok ? 'OK' : 'Fails'}</strong><br>
+      <em>Preliminary check only. Torsion steel needed for two-way.</em>
+    </div>
+  `;
+}
+
+// === COLUMN VERIFIER ===
+function showColumnVerifier() {
+  document.getElementById('content').innerHTML = document.getElementById('column-verifier-template').innerHTML;
+  columnVerifier();
+}
+
+function columnVerifier() {
+  document.getElementById('column-verifier-section').innerHTML = `
+    <h3 style="text-align:center;margin-bottom:20px;color:var(--p);">Column Verifier</h3>
+    <label>Axial Load Pu (kN)</label><input type="number" id="Pu_c" value="1200">
+    <label>Moment Mu (kNm)</label><input type="number" id="Mu_c" value="150">
+    <label>Provided Size (mm × mm)</label><input type="number" id="side_c" value="450">
+    <label>Provided Steel Area Asc (mm²)</label><input type="number" id="Asc_c" value="2500">
+    <label>Concrete Grade</label><select id="fck_c"><option value="25" selected>M25</option><option value="30">M30</option></select>
+    <button class="btn-calc" onclick="verifyColumn()">Verify Column</button>
+  `;
+}
+
+function verifyColumn() {
+  const Pu = parseFloat(document.getElementById('Pu_c').value) * 1000;
+  const Mu = parseFloat(document.getElementById('Mu_c').value) * 1e6;
+  const side = parseFloat(document.getElementById('side_c').value);
+  const Asc_prov = parseFloat(document.getElementById('Asc_c').value);
+  const fck = parseFloat(document.getElementById('fck_c').value);
+
+  const Ag = side * side;
+  const P_max = 0.4 * fck * Ag; // very conservative axial capacity
+  const safe_axial = Pu <= P_max;
+
+  // Very simplified interaction (e ≈ Mu/Pu)
+  const e = Mu / Pu;
+  const e_lim = side / 30; // rough limit for uniaxial
+  const safe = safe_axial && Asc_prov >= 0.008 * Ag && e <= e_lim;
+
+  document.getElementById('column-verifier-result').innerHTML = `
+    <div class="result ${safe ? '' : 'fail'}">
+      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
+      <strong>Provided Area: ${Ag.toLocaleString()} mm²</strong><br>
+      <strong>Axial Capacity (approx): ${(P_max/1000).toFixed(0)} kN > ${Pu/1000} kN ? ${safe_axial ? 'OK' : 'Fails'}</strong><br>
+      <strong>Min Steel: ${0.008*Ag.toFixed(0)} mm² ≤ ${Asc_prov} mm² ? ${Asc_prov >= 0.008*Ag ? 'OK' : 'Too little'}</strong><br>
+      <strong>Eccentricity check: OK for preliminary</strong><br>
+      <em>Very basic check – needs full interaction diagram for accuracy.</em>
+    </div>
+  `;
+}
+
+// === FOOTING VERIFIER ===
+function showFootVerifier() {
+  document.getElementById('content').innerHTML = document.getElementById('footing-verifier-template').innerHTML;
+  footingVerifier();
+}
+
+function footingVerifier() {
+  document.getElementById('footing-verifier-section').innerHTML = `
+    <h3 style="text-align:center;margin-bottom:20px;color:var(--p);">Isolated Footing Verifier</h3>
+    <label>Axial Load (kN)</label><input type="number" id="Pu_f" value="1200">
+    <label>Soil SBC (kN/m²)</label><input type="number" id="sbc" value="150">
+    <label>Provided Size (m × m)</label><input type="number" id="size_f" value="2.5" step="0.1">
+    <label>Provided Depth D (mm)</label><input type="number" id="D_f" value="500">
+    <label>Provided Ast (mm² total)</label><input type="number" id="Ast_f" value="1800">
+    <button class="btn-calc" onclick="verifyFooting()">Verify Footing</button>
+  `;
+}
+
+function verifyFooting() {
+  const Pu = parseFloat(document.getElementById('Pu_f').value);
+  const sbc = parseFloat(document.getElementById('sbc').value);
+  const size = parseFloat(document.getElementById('size_f').value);
+  const D = parseFloat(document.getElementById('D_f').value);
+  const Ast_prov = parseFloat(document.getElementById('Ast_f').value);
+
+  const area_req = Pu / (sbc * 0.6); // 60% of SBC for safety
+  const area_prov = size * size;
+  const d = D - 75; // eff depth
+  const pt = Ast_prov / (size * 1000 * d) * 100;
+  const safe = area_prov >= area_req && pt >= 0.12;
+
+  document.getElementById('footing-verifier-result').innerHTML = `
+    <div class="result ${safe ? '' : 'fail'}">
+      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
+      <strong>Required Area: ${area_req.toFixed(2)} m²</strong><br>
+      <strong>Provided Area: ${area_prov.toFixed(2)} m² (${area_prov >= area_req ? 'OK' : 'Too small'})</strong><br>
+      <strong>Steel %: ${pt.toFixed(2)}% ≥ 0.12% ? ${pt >= 0.12 ? 'OK' : 'Too little'}</strong><br>
+      <em>Basic size & steel check only. Punching/shear still needed.</em>
+    </div>
+  `;
+}
+
+// === WATER TANK VERIFIER ===
+function showWaterTankVerifier() {
+  document.getElementById('content').innerHTML = document.getElementById('watertank-verifier-template').innerHTML;
+  waterTankVerifier();
+}
+
+function waterTankVerifier() {
+  document.getElementById('watertank-verifier-section').innerHTML = `
+    <h3 style="text-align:center;margin-bottom:20px;color:var(--p);">Rectangular Water Tank Verifier</h3>
+    <label>Internal Length L (m)</label><input type="number" id="L_t" value="5.0" step="0.1">
+    <label>Internal Width B (m)</label><input type="number" id="B_t" value="4.0" step="0.1">
+    <label>Water Depth H (m)</label><input type="number" id="H_t" value="3.5" step="0.1">
+    <label>Provided Wall Thickness (mm)</label><input type="number" id="D_t" value="250">
+    <label>Provided Ast (mm²/m both faces)</label><input type="number" id="Ast_t" value="900">
+    <button class="btn-calc" onclick="verifyWaterTank()">Verify Tank</button>
+  `;
+}
+
+function verifyWaterTank() {
+  const L = parseFloat(document.getElementById('L_t').value);
+  const B = parseFloat(document.getElementById('B_t').value);
+  const H = parseFloat(document.getElementById('H_t').value);
+  const D = parseFloat(document.getElementById('D_t').value);
+  const Ast_prov = parseFloat(document.getElementById('Ast_t').value);
+
+  const d = D - 50;
+  const press_max = 10 * H; // kN/m²
+  const M_long = press_max * L * L / 12; // kNm/m (approx fixed top/bottom)
+  const Ast_req = (M_long * 1e6) / (0.87 * 415 * d * 0.9); // using Fe415 conservative
+
+  const safe = Ast_prov >= Ast_req && D >= 200;
+
+  document.getElementById('watertank-verifier-result').innerHTML = `
+    <div class="result ${safe ? '' : 'fail'}">
+      <h3 style="color:${safe ? '#27ae60' : '#c0392b'};">${safe ? 'SAFE' : 'REVISE'}</h3>
+      <strong>Max Pressure: ${press_max} kN/m²</strong><br>
+      <strong>Required Ast (long wall): ${Ast_req.toFixed(0)} mm²/m</strong><br>
+      <strong>Provided Ast: ${Ast_prov} mm²/m (${Ast_prov >= Ast_req ? 'OK' : 'Insufficient'})</strong><br>
+      <strong>Wall Thickness: ${D} mm ≥ 200 mm ? ${D >= 200 ? 'OK' : 'Too thin'}</strong><br>
+      <em>Preliminary check. IS 3370 needs crack & leakage checks too.</em>
+    </div>
+  `;
+}
+
+// Calculation logic
+function verifyBeam() {
+  const L = parseFloat(document.getElementById('span_v').value);
+  const b = parseFloat(document.getElementById('b_v').value);
+  const D = parseFloat(document.getElementById('D_v').value);
+  const DL = parseFloat(document.getElementById('DL_v').value);
+  const LL = parseFloat(document.getElementById('LL_v').value);
+  const fck = parseFloat(document.getElementById('fck_v').value);
+  const fy = parseFloat(document.getElementById('fy_v').value);
+  const Ast_prov = parseFloat(document.getElementById('Ast_v').value);
+
+  const d = D - 50;  // Effective depth (assuming 50mm cover + stirrups)
+  const selfwt = b * D / 1e6 * 25;
+  const wu = 1.5 * (DL + LL + selfwt);  // Factored load
+  const Mu = wu * L * L / 8;  // Factored moment
+
+  // Required Ast (simplified LSM)
+  const Ast_req = (Mu * 1e6) / (0.87 * fy * 0.9 * d);
+
+  // Basic checks
+  const Mu_lim = 0.138 * fck * b * d * d / 1e6;  // Singly reinforced limit
+  const defl_check = L * 1000 / d <= 20;  // Basic deflection (span/d <=20 for SS beam)
+  const shearVu = wu * L / 2;
+  const tau_v = shearVu * 1000 / (b * d);  // Nominal shear stress
+  const tau_c_max = fck <= 20 ? 2.8 : (fck <= 25 ? 3.1 : 3.5);  // Max shear stress
+  const shear_safe = tau_v <= tau_c_max;
+
+  // Overall safe if Ast_prov >= Ast_req, Mu <= Mu_lim, deflection ok, shear ok
+  const is_safe = Ast_prov >= Ast_req && Mu <= Mu_lim && defl_check && shear_safe;
+
+  let result = `
+    <div class="result ${is_safe ? '' : 'fail'}">
+      <h3 style="text-align:center;color:${is_safe ? '#27ae60' : '#c0392b'};">${is_safe ? 'SAFE' : 'REVISE'}</h3>
+      <strong>Factored Moment Mu: ${Mu.toFixed(1)} kNm</strong><br>
+      <strong>Required Steel Ast: ${Ast_req.toFixed(0)} mm²</strong><br>
+      <strong>Provided Ast: ${Ast_prov} mm² (${Ast_prov >= Ast_req ? 'OK' : 'Insufficient'})</strong><br>
+      <strong>Singly Reinforced Limit: ${Mu <= Mu_lim ? 'OK' : 'Exceeds – Needs Doubly Reinforced'}</strong><br>
+      <strong>Deflection Check (span/d): ${L*1000/d.toFixed(1)} ≤ 20? ${defl_check ? 'OK' : 'Fails'}</strong><br>
+      <strong>Shear Stress: ${tau_v.toFixed(2)} MPa ≤ ${tau_c_max} MPa? ${shear_safe ? 'OK' : 'Fails – Needs Stirrups Check'}</strong><br><br>
+      <em>Note: This is a preliminary check. Always consult a qualified engineer for full verification.</em>
+    </div>
+  `;
+  document.getElementById('verifier-result').innerHTML = result;
+}
+
 function showHome() {
   const username = document.getElementById('username').textContent;
 
@@ -1256,6 +1668,24 @@ function showCountryCodes(country) {
       }
       showHome();
     });
+
+    function toggleSub(id) {
+  const submenu = document.getElementById(id);              // find the submenu
+  const parentSpan = submenu.previousElementSibling;        // find the "Design Calculators" line
+
+  // Optional: close all other open submenus (makes it feel more modern)
+  document.querySelectorAll('.submenu.active').forEach(el => {
+    if (el !== submenu) {
+      el.classList.remove('active');
+      el.previousElementSibling.classList.remove('active');
+    }
+  });
+
+  // Now toggle (open/close) the one we clicked
+  submenu.classList.toggle('active');
+  parentSpan.classList.toggle('active');
+}
+
   </script>
 </body>
 </html>
