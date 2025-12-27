@@ -183,72 +183,78 @@
 <body>
   
 
-  <!-- Login Screen -->
-  <div id="login-screen">
-    <div id="login-box">
-      <h1>CivilCode</h1>
-      <p style="color:white;font-size:18px;margin-bottom:30px;">Indian Civil Engineering Suite</p>
-      <input type="text" id="user" placeholder="Enter your name">
-      <button class="btn-red" onclick="login()">Login</button>
-      <button class="btn-blue" onclick="login(true)" style="margin-top:10px;">Continue as Guest</button>
-    </div>
-  </div>
 
-  <!-- Compact Sidebar -->
- <nav id="sidebar" class="closed">
+  <nav id="sidebar" class="closed">
   <ul class="menu">
-    <!-- 1. Home – always first -->
+    <!-- 1. Home -->
     <li>
       <span onclick="showHome()" class="active">
         <i class="fas fa-home"></i> Home
       </span>
     </li>
 
-    <!-- 2. Design Calculators dropdown – second, nice and prominent -->
+   <!-- 2. RCC Designers -->
+<li>
+  <span onclick="toggleSub('design-submenu')" class="has-submenu">
+    <i class="fas fa-building-columns"></i> RCC Design
+    <i class="fas fa-chevron-down submenu-arrow"></i>
+  </span>
+  <ul id="design-submenu" class="submenu">
+    <li><span onclick="showOneWay()"><i class="fas fa-ruler-horizontal"></i> One-Way Slab</span></li>
+    <li><span onclick="showTwoWay()"><i class="fas fa-th"></i> Two-Way Slab</span></li>
+    <li><span onclick="showBeam()"><i class="fas fa-vector-square"></i> Beam Design</span></li>
+    <li><span onclick="showColumn()"><i class="fas fa-columns"></i> Column Design</span></li>
+    <li><span onclick="showWaterTank()"><i class="fas fa-cube"></i> Water Tank</span></li>
+    <li><span onclick="showStaircase()"><i class="fas fa-stairs"></i> Dog-legged Staircase</span></li>
+    <li><span onclick="showCrack()"><i class="fas fa-hard-hat"></i> Crack Width</span></li>
+    <li><span onclick="showDevLength()"><i class="fas fa-link"></i> Development Length</span></li>
+    <li><span onclick="showMixDesign()"><i class="fas fa-flask"></i> Concrete Mix Design</span></li>
+  </ul>
+</li>
+
+    <!-- 3. Steel Designers -->
     <li>
-      <span onclick="toggleSub('design-submenu')" class="has-submenu">
-        <i class="fas fa-calculator"></i> Design Calculators
+      <span onclick="toggleSub('steel-submenu')" class="has-submenu">
+        <i class="fas fa-grip-lines-vertical"></i> Steel Design
         <i class="fas fa-chevron-down submenu-arrow"></i>
       </span>
-      
-      <ul id="design-submenu" class="submenu">
-        <li><span onclick="showOneWay()"><i class="fas fa-ruler-horizontal"></i> One-Way Slab</span></li>
-        <li><span onclick="showTwoWay()"><i class="fas fa-th"></i> Two-Way Slab</span></li>
-        <li><span onclick="showBeam()"><i class="fas fa-vector-square"></i> Beam Design</span></li>
-        <li><span onclick="showColumn()"><i class="fas fa-columns"></i> Column Design</span></li>
-        <li><span onclick="showWaterTank()"><i class="fas fa-cube"></i> Water Tank</span></li>
-        <li><span onclick="showStaircase()"><i class="fas fa-stairs"></i> Dog-legged Staircase</span></li>
-        <li><span onclick="showCrack()"><i class="fas fa-hard-hat"></i> Crack Width</span></li>
-        <li><span onclick="showDevLength()"><i class="fas fa-link"></i> Development Length</span></li>
-        <li><span onclick="showMixDesign()"><i class="fas fa-flask"></i> Concrete Mix Design</span></li>
+      <ul id="steel-submenu" class="submenu">
+        <li><span onclick="showSteelBeam()"><i class="fas fa-vector-square"></i> Beam Design</span></li>
+        <li><span onclick="showSteelColumn()"><i class="fas fa-columns"></i> Column Design</span></li>
+        <li><span onclick="showSteelTension()"><i class="fas fa-link"></i> Tension Member</span></li>
+        <li><span onclick="showSteelConnection()"><i class="fas fa-bolt"></i> Bolted Connection</span></li>
+        <li><span onclick="showSteelBasePlate()"><i class="fas fa-layer-group"></i> Base Plate</span></li>
       </ul>
     </li>
 
-<li>
-  <span onclick="toggleSub('verifiers-submenu')" class="has-submenu">
-    <i class="fas fa-check-double"></i> Design Verifiers
-    <i class="fas fa-chevron-down submenu-arrow"></i>
-  </span>
-  
-  <ul id="verifiers-submenu" class="submenu">
-    <li><span onclick="showVerifier()"><i class="fas fa-columns"></i> Beam Verifier</span></li>
-    <li><span onclick="showSlabVerifier()"><i class="fas fa-square"></i> Slab Verifier</span></li>
-    <li><span onclick="showColumnVerifier()"><i class="fas fa-columns"></i> Column Verifier</span></li>
-    <li><span onclick="showFootVerifier()"><i class="fas fa-layer-group"></i> Footing Verifier</span></li>
-    <li><span onclick="showWaterTankVerifier()"><i class="fas fa-tint"></i> Water Tank Verifier</span></li>
-  </ul>
-</li>
-    <!-- 3. Other items – in logical order -->
+    <!-- 4. Practical Tools (ONE TIME ONLY – WITH ALL SOIL TOOLS) -->
+    <li>
+      <span onclick="toggleSub('tools-submenu')" class="has-submenu">
+        <i class="fas fa-tools"></i> Practical Tools
+        <i class="fas fa-chevron-down submenu-arrow"></i>
+      </span>
+      <ul id="tools-submenu" class="submenu">
+        <li><span onclick="showUnitConverter()"><i class="fas fa-exchange-alt"></i> Unit Converter</span></li>
+        <li><span onclick="showThumbRules()"><i class="fas fa-ruler-combined"></i> Thumb Rules</span></li>
+        <li><span onclick="showBBS()"><i class="fas fa-cut"></i> Bar Bending Schedule</span></li>
+        <li><span onclick="showLoadCalc()"><i class="fas fa-weight-hanging"></i> Load Estimator</span></li>
+        <li><span onclick="showSBC()"><i class="fas fa-mountain"></i> Soil SBC Guide</span></li>
+        <li><span onclick="showBearingCapacity()"><i class="fas fa-compress"></i> Bearing Capacity</span></li>
+        <li><span onclick="showSettlement()"><i class="fas fa-arrow-down"></i> Settlement Estimate</span></li>
+        <li><span onclick="showEarthPressure()"><i class="fas fa-balance-scale"></i> Earth Pressure</span></li>
+        <li><span onclick="showPileCapacity()"><i class="fas fa-gem"></i> Pile Capacity</span></li>
+        <li><span onclick="showSoilWeight()"><i class="fas fa-feather"></i> Soil Unit Weight</span></li>
+      </ul>
+    </li>
+
+    <!-- 5. Codal Provisions -->
     <li>
       <span onclick="showCodalProvisions()">
         <i class="fas fa-book-open"></i> Codal Provisions
       </span>
     </li>
-    <li>
-      <span onclick="showFun()">
-        <i class="fas fa-lightbulb"></i> Fun Facts
-      </span>
-    </li>
+
+    <!-- 6. Disclaimer -->
     <li>
       <span onclick="showDisclaimer()">
         <i class="fas fa-shield-alt"></i> Disclaimer
@@ -691,26 +697,7 @@
   }
 </script>
      <script>
-    // ==================== CORE FUNCTIONS ====================
-function login(guest = false) {
-  console.log("Login button clicked!"); // Debug: Check if this runs
 
-  const name = document.getElementById('user').value.trim() || (guest ? "Guest" : "Civil Engineer");
-  document.getElementById('username').textContent = name;
-
-  // Hide login screen
-  const loginScreen = document.getElementById('login-screen');
-  if (loginScreen) {
-    loginScreen.style.display = "none";
-    console.log("Login screen hidden");
-  } else {
-    console.error("Login screen element not found!");
-  }
-
-  // Load homepage
-  console.log("Calling showHome()...");
-  showHome();
-}
 
     function toggleSub(id) {
       document.getElementById(id).classList.toggle('active');
@@ -1317,25 +1304,579 @@ function showVerifyGrid() {
     </div>
   `;
 }
-    function showFun() {
-      document.getElementById('content').innerHTML = `
-        <div class="card"><h2>Fun & Mind-Blowing Civil Engineering Facts</h2>
-          <ul style="font-size:19px;line-height:2.6;padding-left:30px;color:#333;">
-            <li>India has the <b>world’s largest road network</b> — over 63 lakh km!</li>
-            <li>Chenab Bridge (J&K) is <b>taller than Eiffel Tower</b> by 35 meters — 359m high!</li>
-            <li>Statue of Unity is the <b>world’s tallest statue</b> at 182m — twice the height of Statue of Liberty.</li>
-            <li>Delhi Metro is the <b>first metro in the world</b> to get UN carbon credits.</li>
-            <li>India built a 100+ km highway in <b>just 96 hours</b> — world record!</li>
-            <li>Konkan Railway has <b>92 tunnels & 2,000+ bridges</b> in just 760 km.</li>
-            <li>Burj Khalifa used Indian cement (UltraTech) for its foundation.</li>
-            <li>India’s Bandra-Worli Sea Link saved <b>100 crore litres of fuel</b> in 10 years.</li>
-            <li>The Howrah Bridge (Kolkata) uses <b>zero nuts & bolts</b> — entirely riveted!</li>
-            <li>Mumbai’s Coastal Road tunnel goes <b>under the sea</b> — first in India.</li>
-            <li>India has more than <b>1 lakh practicing structural engineers</b> — highest in the world!</li>
-            <li>Atal Tunnel (Rohtang) is the <b>world’s longest highway tunnel above 10,000 ft</b>.</li>
-          </ul>
-        </div>`;
-    }
+    // ==================== PRACTICAL TOOLS SECTION (BULLETPROOF v2) ====================
+
+// ==================== PRACTICAL TOOLS SECTION (COMPLETE & FINAL) ====================
+
+// 1. Unit Converter (THE ORIGINAL KING)
+function showUnitConverter() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Unit Converter</h2>
+      <p style="margin-bottom:30px;color:var(--text-muted);">Essential daily conversions for civil engineers</p>
+
+      <div class="mode-grid">
+        <!-- Force -->
+        <div class="mode-card">
+          <h3><i class="fas fa-weight-hanging"></i> Force</h3>
+          <label>Value</label><input type="number" id="force-val" value="100" step="any">
+          <label>From</label>
+          <select id="force-from">
+            <option value="kN" selected>kN</option>
+            <option value="N">N</option>
+            <option value="kg">kg force</option>
+            <option value="tonne">tonne force</option>
+          </select>
+          <label>To</label>
+          <select id="force-to">
+            <option value="N">N</option>
+            <option value="kN">kN</option>
+            <option value="kg">kg force</option>
+            <option value="tonne">tonne force</option>
+          </select>
+          <button class="btn-calc" onclick="convertForce()">Convert</button>
+          <div id="force-result" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+
+        <!-- Pressure/Stress -->
+        <div class="mode-card">
+          <h3><i class="fas fa-compress-arrows-alt"></i> Pressure / Stress</h3>
+          <label>Value</label><input type="number" id="press-val" value="25" step="any">
+          <label>From</label>
+          <select id="press-from">
+            <option value="MPa" selected>MPa</option>
+            <option value="N/mm²">N/mm²</option>
+            <option value="kg/cm²">kg/cm²</option>
+            <option value="kN/m²">kN/m²</option>
+          </select>
+          <label>To</label>
+          <select id="press-to">
+            <option value="N/mm²">N/mm²</option>
+            <option value="MPa">MPa</option>
+            <option value="kg/cm²">kg/cm²</option>
+            <option value="kN/m²">kN/m²</option>
+          </select>
+          <button class="btn-calc" onclick="convertPressure()">Convert</button>
+          <div id="press-result" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+
+        <!-- Moment -->
+        <div class="mode-card">
+          <h3><i class="fas fa-sync-alt"></i> Moment</h3>
+          <label>Value</label><input type="number" id="moment-val" value="100" step="any">
+          <label>From</label>
+          <select id="moment-from">
+            <option value="kNm" selected>kN-m</option>
+            <option value="Nm">N-m</option>
+            <option value="Nmm">N-mm</option>
+          </select>
+          <label>To</label>
+          <select id="moment-to">
+            <option value="Nmm">N-mm</option>
+            <option value="Nm">N-m</option>
+            <option value="kNm">kN-m</option>
+          </select>
+          <button class="btn-calc" onclick="convertMoment()">Convert</button>
+          <div id="moment-result" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+
+        <!-- Steel Weight -->
+        <div class="mode-card">
+          <h3><i class="fas fa-grip-lines-vertical"></i> Steel Weight</h3>
+          <label>Diameter (mm)</label>
+          <select id="steel-dia">
+            <option>8</option><option>10</option><option>12</option><option>16</option>
+            <option selected>20</option><option>25</option><option>32</option>
+          </select>
+          <label>Length (m)</label><input type="number" id="steel-length" value="12" step="any">
+          <button class="btn-calc" onclick="calcSteelWeight()">Calculate</button>
+          <div id="steel-result" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+
+        <!-- Cement Bags -->
+        <div class="mode-card">
+          <h3><i class="fas fa-cubes"></i> Cement Bags</h3>
+          <label>Volume (m³)</label><input type="number" id="cement-vol" value="10" step="any">
+          <label>Cement (kg/m³)</label><input type="number" id="cement-kg" value="350" step="any">
+          <button class="btn-calc" onclick="calcCementBags()">Calculate</button>
+          <div id="cement-result" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function convertForce() {
+  const el = (id) => document.getElementById(id);
+  if (!el('force-val') || !el('force-from') || !el('force-to')) return;
+  const val = parseFloat(el('force-val').value) || 0;
+  const from = el('force-from').value;
+  const to = el('force-to').value;
+  const conv = { kN: 1000, N: 1, kg: 9.81, tonne: 9810 };
+  const result = val * conv[from] / conv[to];
+  el('force-result').innerHTML = `<strong>Result: ${result.toFixed(3)} ${to}</strong>`;
+  el('force-result').style.display = 'block';
+}
+
+function convertPressure() {
+  const el = (id) => document.getElementById(id);
+  if (!el('press-val') || !el('press-from') || !el('press-to')) return;
+  const val = parseFloat(el('press-val').value) || 0;
+  const from = el('press-from').value;
+  const to = el('press-to').value;
+  const conv = { MPa: 1, 'N/mm²': 1, 'kg/cm²': 0.0981, 'kN/m²': 0.001 };
+  const result = val * conv[from] / conv[to];
+  el('press-result').innerHTML = `<strong>Result: ${result.toFixed(4)} ${to}</strong>`;
+  el('press-result').style.display = 'block';
+}
+
+function convertMoment() {
+  const el = (id) => document.getElementById(id);
+  if (!el('moment-val') || !el('moment-from') || !el('moment-to')) return;
+  const val = parseFloat(el('moment-val').value) || 0;
+  const from = el('moment-from').value;
+  const to = el('moment-to').value;
+  const conv = { kNm: 1e6, Nm: 1000, Nmm: 1 };
+  const result = val * conv[from] / conv[to];
+  el('moment-result').innerHTML = `<strong>Result: ${result.toFixed(2)} ${to}</strong>`;
+  el('moment-result').style.display = 'block';
+}
+
+function calcSteelWeight() {
+  const el = (id) => document.getElementById(id);
+  if (!el('steel-dia') || !el('steel-length')) return;
+  const dia = parseFloat(el('steel-dia').value);
+  const length = parseFloat(el('steel-length').value) || 0;
+  const weightPerM = dia * dia * 0.006165;
+  const total = weightPerM * length;
+  el('steel-result').innerHTML = `<strong>Total Weight: ${total.toFixed(2)} kg</strong><br><small>${weightPerM.toFixed(3)} kg/m × ${length} m</small>`;
+  el('steel-result').style.display = 'block';
+}
+
+function calcCementBags() {
+  const el = (id) => document.getElementById(id);
+  if (!el('cement-vol') || !el('cement-kg')) return;
+  const vol = parseFloat(el('cement-vol').value) || 0;
+  const kg = parseFloat(el('cement-kg').value) || 0;
+  const totalKg = vol * kg;
+  const bags = Math.ceil(totalKg / 50);
+  el('cement-result').innerHTML = `<strong>Total Cement: ${totalKg.toFixed(0)} kg</strong><br><strong>Bags (50kg): ${bags}</strong>`;
+  el('cement-result').style.display = 'block';
+}
+
+// [The rest of the tools — Thumb Rules, BBS, Load Estimator, SBC — from the previous message remain exactly the same]
+    // 2. Thumb Rules Calculator
+function showThumbRules() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Thumb Rules – Quick Preliminary Sizing (IS 456)</h2>
+      <p style="margin-bottom:30px;color:var(--text-muted);">Fast estimates for initial design</p>
+
+      <div class="mode-grid">
+        <div class="mode-card">
+          <h3>Slab Thickness</h3>
+          <label>Span (m)</label><input type="number" id="tr-span" value="5.0" step="0.1">
+          <label>Type</label>
+          <select id="tr-type">
+            <option value="one">One-Way</option>
+            <option value="two" selected>Two-Way</option>
+          </select>
+          <button class="btn-calc" onclick="calcThumbSlab()">Calculate</button>
+          <div id="tr-slab" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+
+        <div class="mode-card">
+          <h3>Beam Depth</h3>
+          <label>Span (m)</label><input type="number" id="tr-beam-span" value="6.0" step="0.1">
+          <button class="btn-calc" onclick="calcThumbBeam()">Calculate</button>
+          <div id="tr-beam" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+
+        <div class="mode-card">
+          <h3>Isolated Footing</h3>
+          <label>Axial Load (kN)</label><input type="number" id="tr-load" value="1200">
+          <label>SBC (kN/m²)</label><input type="number" id="tr-sbc" value="150">
+          <button class="btn-calc" onclick="calcThumbFooting()">Calculate</button>
+          <div id="tr-foot" class="result" style="display:none;margin-top:20px;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function calcThumbSlab() {
+  const spanEl = document.getElementById('tr-span');
+  const typeEl = document.getElementById('tr-type');
+  const resultEl = document.getElementById('tr-slab');
+  if (!spanEl || !typeEl || !resultEl) return;
+
+  const span = parseFloat(spanEl.value) || 0;
+  const type = typeEl.value;
+  const ratio = type === 'one' ? 25 : 32;
+  const thick = Math.ceil(span * 1000 / ratio / 5) * 5;
+
+  resultEl.innerHTML = `<strong>Suggested Thickness: ${thick} mm</strong><br><small>Span/${ratio} rule (approx)</small>`;
+  resultEl.style.display = 'block';
+}
+
+function calcThumbBeam() {
+  const spanEl = document.getElementById('tr-beam-span');
+  const resultEl = document.getElementById('tr-beam');
+  if (!spanEl || !resultEl) return;
+
+  const span = parseFloat(spanEl.value) || 0;
+  const depth = Math.ceil(span * 1000 / 12 / 25) * 25;
+
+  resultEl.innerHTML = `<strong>Suggested Depth: ${depth}–${depth + 100} mm</strong><br><small>Span/12 to Span/15 rule</small>`;
+  resultEl.style.display = 'block';
+}
+
+function calcThumbFooting() {
+  const loadEl = document.getElementById('tr-load');
+  const sbcEl = document.getElementById('tr-sbc');
+  const resultEl = document.getElementById('tr-foot');
+  if (!loadEl || !sbcEl || !resultEl) return;
+
+  const load = parseFloat(loadEl.value) || 0;
+  const sbc = parseFloat(sbcEl.value) || 1;
+  const area = load / sbc;
+  const side = Math.ceil(Math.sqrt(area) * 10) / 10;
+
+  resultEl.innerHTML = `<strong>Suggested Size: ${side.toFixed(1)} × ${side.toFixed(1)} m</strong><br><small>Required area: ${area.toFixed(2)} m²</small>`;
+  resultEl.style.display = 'block';
+}
+
+// 3. Bar Bending Schedule Helper
+function showBBS() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Bar Bending Schedule Helper</h2>
+      <p style="margin-bottom:20px;color:var(--text-muted);">Quick cutting length & weight calculator</p>
+
+      <label>Bar Diameter (mm)</label>
+      <select id="bbs-dia">
+        <option>8</option><option>10</option><option>12</option><option>16</option>
+        <option selected>20</option><option>25</option><option>32</option>
+      </select>
+
+      <label>Clear Length (m)</label><input type="number" id="bbs-length" value="5.0" step="0.1">
+
+      <label>Number of Bars</label><input type="number" id="bbs-count" value="6">
+
+      <label>Include 90° Hooks?</label><input type="checkbox" id="bbs-hook">
+
+      <label>Include Lap (50φ)?</label><input type="checkbox" id="bbs-lap">
+
+      <button class="btn-calc" onclick="calcBBS()">Calculate</button>
+
+      <div id="bbs-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcBBS() {
+  const diaEl = document.getElementById('bbs-dia');
+  const lenEl = document.getElementById('bbs-length');
+  const countEl = document.getElementById('bbs-count');
+  const hookEl = document.getElementById('bbs-hook');
+  const lapEl = document.getElementById('bbs-lap');
+  const resultEl = document.getElementById('bbs-result');
+  if (!diaEl || !lenEl || !countEl || !resultEl) return;
+
+  const dia = parseFloat(diaEl.value);
+  const length = parseFloat(lenEl.value) || 0;
+  const count = parseFloat(countEl.value) || 1;
+  const hook = hookEl.checked ? 0.24 * dia : 0; // approx 12d hook
+  const lap = lapEl.checked ? 50 * dia / 1000 : 0;
+
+  const cutLength = length + 0.1 + 2 * hook + lap;
+  const totalLength = cutLength * count;
+  const weight = totalLength * (dia * dia * 0.006165);
+
+  resultEl.innerHTML = `
+    <strong>Cutting Length per bar: ${cutLength.toFixed(2)} m</strong><br>
+    <strong>Total Length: ${totalLength.toFixed(2)} m</strong><br>
+    <strong>Total Weight: ${weight.toFixed(1)} kg</strong>
+  `;
+  resultEl.style.display = 'block';
+}
+
+// 4. Load Estimator
+function showLoadCalc() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Quick Load Estimator (IS 875 Part 2)</h2>
+      <label>Building Type</label>
+      <select id="load-type">
+        <option value="2">Residential (2 kN/m²)</option>
+        <option value="3">Office (3 kN/m²)</option>
+        <option value="4" selected>General (4 kN/m²)</option>
+        <option value="5">Staircase (5 kN/m²)</option>
+      </select>
+
+      <label>Floor Area (m²)</label><input type="number" id="load-area" value="200">
+
+      <label>Slab Thickness (mm)</label><input type="number" id="load-thick" value="150">
+
+      <label>Floor Finish (kN/m²)</label><input type="number" id="load-ff" value="1.0">
+
+      <button class="btn-calc" onclick="calcLoad()">Calculate</button>
+
+      <div id="load-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcLoad() {
+  const typeEl = document.getElementById('load-type');
+  const areaEl = document.getElementById('load-area');
+  const thickEl = document.getElementById('load-thick');
+  const ffEl = document.getElementById('load-ff');
+  const resultEl = document.getElementById('load-result');
+  if (!typeEl || !areaEl || !thickEl || !ffEl || !resultEl) return;
+
+  const ll = parseFloat(typeEl.value);
+  const area = parseFloat(areaEl.value) || 0;
+  const thick = parseFloat(thickEl.value) / 1000 || 0.15;
+  const ff = parseFloat(ffEl.value) || 0;
+
+  const slabWt = 25 * thick;
+  const totalDL = slabWt + ff;
+  const totalFactored = 1.5 * (totalDL + ll) * area;
+
+  resultEl.innerHTML = `
+    <strong>Live Load: ${ll} kN/m²</strong><br>
+    <strong>Dead Load: ${totalDL.toFixed(2)} kN/m²</strong><br>
+    <strong>Total Factored Load: ${totalFactored.toFixed(0)} kN</strong>
+  `;
+  resultEl.style.display = 'block';
+}
+
+// 5. Soil SBC Guide
+function showSBC() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Soil Safe Bearing Capacity Guide</h2>
+      <p style="margin-bottom:20px;color:var(--text-muted);">Approximate values for preliminary design</p>
+
+      <label>Soil Type</label>
+      <select id="sbc-soil">
+        <option value="3300">Hard Rock</option>
+        <option value="1000">Soft Rock</option>
+        <option value="600">Dense Gravel/Sand</option>
+        <option value="400">Medium Sand</option>
+        <option value="450">Hard Clay</option>
+        <option value="250">Medium Clay</option>
+        <option value="100" selected>Soft Clay</option>
+        <option value="150">Black Cotton Soil</option>
+        <option value="50">Loose Fill</option>
+      </select>
+
+      <button class="btn-calc" onclick="showSBCResult()">Show SBC</button>
+      <div id="sbc-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function showSBCResult() {
+  const soilEl = document.getElementById('sbc-soil');
+  const resultEl = document.getElementById('sbc-result');
+  if (!soilEl || !resultEl) return;
+
+  const sbc = soilEl.value;
+  resultEl.innerHTML = `
+    <strong>Safe Bearing Capacity: ${sbc} kN/m²</strong><br>
+    <small>Approximate — always verify with soil test report</small>
+  `;
+  resultEl.style.display = 'block';
+}
+// ==================== SOIL TOOLS ====================
+
+// 1. Bearing Capacity (Terzaghi)
+function showBearingCapacity() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Ultimate Bearing Capacity (Terzaghi)</h2>
+      <p style="margin-bottom:20px;color:var(--text-muted);">For strip footing (cohesionless & cohesive)</p>
+
+      <label>Cohesion c (kN/m²)</label><input type="number" id="bc-c" value="0">
+      <label>Unit Weight γ (kN/m³)</label><input type="number" id="bc-gamma" value="18">
+      <label>Angle of Friction φ (°)</label><input type="number" id="bc-phi" value="30">
+      <label>Footing Depth Df (m)</label><input type="number" id="bc-df" value="1.5">
+      <label>Footing Width B (m)</label><input type="number" id="bc-b" value="2">
+
+      <button class="btn-calc" onclick="calcBearingCapacity()">Calculate qu</button>
+      <div id="bc-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcBearingCapacity() {
+  const c = parseFloat(document.getElementById('bc-c').value) || 0;
+  const gamma = parseFloat(document.getElementById('bc-gamma').value) || 0;
+  const phi = parseFloat(document.getElementById('bc-phi').value) || 0;
+  const Df = parseFloat(document.getElementById('bc-df').value) || 0;
+  const B = parseFloat(document.getElementById('bc-b').value) || 1;
+
+  const phiRad = phi * Math.PI / 180;
+  const Nq = Math.exp(Math.PI * Math.tan(phiRad)) * Math.pow((Math.cos(phiRad) + Math.sin(phiRad)) / (Math.cos(phiRad) - Math.sin(phiRad)), 2) / (2 * Math.pow(Math.cos(phiRad), 2));
+  const Nc = (Nq - 1) * Math.cos(phiRad) / Math.sin(phiRad);
+  const Ng = 2 * (Nq + 1) * Math.tan(phiRad);
+
+  const qu = c * Nc + gamma * Df * (Nq - 1) + 0.5 * gamma * B * Ng;
+  const safe = qu / 3; // FOS 3
+
+  document.getElementById('bc-result').innerHTML = `
+    <strong>Ultimate Bearing Capacity qu = ${qu.toFixed(1)} kN/m²</strong><br>
+    <strong>Safe Bearing Capacity (FOS 3) = ${safe.toFixed(1)} kN/m²</strong>
+  `;
+  document.getElementById('bc-result').style.display = 'block';
+}
+
+// 2. Immediate Settlement
+function showSettlement() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Immediate Settlement Estimate</h2>
+      <label>Soil Type</label>
+      <select id="sett-type">
+        <option value="cohesive">Cohesive (Clay)</option>
+        <option value="granular">Granular (Sand)</option>
+      </select>
+      <label>Applied Pressure q (kN/m²)</label><input type="number" id="sett-q" value="150">
+      <label>Footing Width B (m)</label><input type="number" id="sett-b" value="2">
+      <label>Modulus Es (MPa)</label><input type="number" id="sett-es" value="15">
+
+      <button class="btn-calc" onclick="calcSettlement()">Calculate</button>
+      <div id="sett-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcSettlement() {
+  const type = document.getElementById('sett-type').value;
+  const q = parseFloat(document.getElementById('sett-q').value);
+  const B = parseFloat(document.getElementById('sett-b').value);
+  const Es = parseFloat(document.getElementById('sett-es').value) * 1000; // to kPa
+
+  let If = type === 'cohesive' ? 0.9 : 1.0;
+  const mu = type === 'cohesive' ? 0.5 : 0.3;
+  const s = (q * B * (1 - mu * mu)) / Es * If;
+
+  document.getElementById('sett-result').innerHTML = `
+    <strong>Immediate Settlement ≈ ${s.toFixed(1)} mm</strong><br>
+    <small>For square footing at surface</small>
+  `;
+  document.getElementById('sett-result').style.display = 'block';
+}
+
+// 3. Earth Pressure (Rankine)
+function showEarthPressure() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Earth Pressure (Rankine Theory)</h2>
+      <label>Unit Weight γ (kN/m³)</label><input type="number" id="ep-gamma" value="18">
+      <label>Angle of Friction φ (°)</label><input type="number" id="ep-phi" value="30">
+      <label>Wall Height H (m)</label><input type="number" id="ep-h" value="5">
+      <label>Cohesion c (kN/m²)</label><input type="number" id="ep-c" value="0">
+
+      <button class="btn-calc" onclick="calcEarthPressure()">Calculate</button>
+      <div id="ep-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcEarthPressure() {
+  const gamma = parseFloat(document.getElementById('ep-gamma').value);
+  const phi = parseFloat(document.getElementById('ep-phi').value);
+  const H = parseFloat(document.getElementById('ep-h').value);
+  const c = parseFloat(document.getElementById('ep-c').value);
+
+  const phiRad = phi * Math.PI / 180;
+  const Ka = Math.pow((Math.cos(phiRad) - Math.sqrt(Math.pow(Math.cos(phiRad),2) - Math.pow(Math.cos(phiRad + Math.PI/2),2))) / (Math.cos(phiRad) + Math.sqrt(Math.pow(Math.cos(phiRad),2) - Math.pow(Math.cos(phiRad + Math.PI/2),2))), 2);
+  const Kp = 1 / Ka;
+
+  const pa = Ka * gamma * H - 2 * c * Math.sqrt(Ka);
+  const pp = Kp * gamma * H + 2 * c * Math.sqrt(Kp);
+
+  document.getElementById('ep-result').innerHTML = `
+    <strong>Active Pressure (Ka): ${Ka.toFixed(3)}</strong><br>
+    <strong>Passive Pressure (Kp): ${Kp.toFixed(3)}</strong><br>
+    <strong>Active Force at base: ${Math.max(0, pa * H / 2).toFixed(1)} kN/m</strong><br>
+    <strong>Passive Force at base: ${(pp * H / 2).toFixed(1)} kN/m</strong>
+  `;
+  document.getElementById('ep-result').style.display = 'block';
+}
+
+// 4. Pile Capacity (Static)
+function showPileCapacity() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Pile Capacity Estimate</h2>
+      <label>Pile Diameter (m)</label><input type="number" id="pile-d" value="0.6">
+      <label>Pile Length (m)</label><input type="number" id="pile-l" value="15">
+      <label>End Bearing qu (kN/m²)</label><input type="number" id="pile-qu" value="5000">
+      <label>Skin Friction fs (kN/m²)</label><input type="number" id="pile-fs" value="50">
+      <label>FOS</label><input type="number" id="pile-fos" value="2.5">
+
+      <button class="btn-calc" onclick="calcPile()">Calculate</button>
+      <div id="pile-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcPile() {
+  const d = parseFloat(document.getElementById('pile-d').value);
+  const L = parseFloat(document.getElementById('pile-l').value);
+  const qu = parseFloat(document.getElementById('pile-qu').value);
+  const fs = parseFloat(document.getElementById('pile-fs').value);
+  const fos = parseFloat(document.getElementById('pile-fos').value);
+
+  const end = qu * Math.PI * d * d / 4;
+  const skin = fs * Math.PI * d * L;
+  const total = end + skin;
+  const safe = total / fos;
+
+  document.getElementById('pile-result').innerHTML = `
+    <strong>End Bearing: ${end.toFixed(0)} kN</strong><br>
+    <strong>Skin Friction: ${skin.toFixed(0)} kN</strong><br>
+    <strong>Ultimate Capacity: ${total.toFixed(0)} kN</strong><br>
+    <strong>Safe Capacity (FOS ${fos}): ${safe.toFixed(0)} kN</strong>
+  `;
+  document.getElementById('pile-result').style.display = 'block';
+}
+
+// 5. Soil Unit Weight
+function showSoilWeight() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Soil Unit Weight Calculator</h2>
+      <label>Bulk Unit Weight γ (kN/m³)</label><input type="number" id="sw-gamma" value="18">
+      <label>Water Content w (%)</label><input type="number" id="sw-w" value="20">
+      <label>Void Ratio e</label><input type="number" id="sw-e" value="0.8">
+
+      <button class="btn-calc" onclick="calcSoilWeight()">Calculate</button>
+      <div id="sw-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcSoilWeight() {
+  const gamma = parseFloat(document.getElementById('sw-gamma').value);
+  const w = parseFloat(document.getElementById('sw-w').value) / 100;
+  const e = parseFloat(document.getElementById('sw-e').value);
+
+  const gamma_d = gamma / (1 + w);
+  const gamma_sat = gamma_d * (1 + e) + 9.81 * e;
+  const gamma_sub = gamma_sat - 9.81;
+
+  document.getElementById('sw-result').innerHTML = `
+    <strong>Dry Unit Weight γd = ${gamma_d.toFixed(2)} kN/m³</strong><br>
+    <strong>Saturated γsat = ${gamma_sat.toFixed(2)} kN/m³</strong><br>
+    <strong>Submerged γ' = ${gamma_sub.toFixed(2)} kN/m³</strong>
+  `;
+  document.getElementById('sw-result').style.display = 'block';
+}
 
     function showDisclaimer() {
       document.getElementById('content').innerHTML = document.getElementById('disclaimer-template').innerHTML;
@@ -2365,6 +2906,215 @@ window.addEventListener("resize", () => {
   parentSpan.classList.toggle('active');
 }
 
+function showSteelPlaceholder() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Steel Design (IS 800:2007)</h2>
+      <p style="font-size:18px;color:var(--text-muted);text-align:center;margin:40px 0;">
+        Coming Soon!<br><br>
+        Beam Design • Column Design • Tension Members • Connections • Base Plate
+      </p>
+      <div style="text-align:center;margin-top:30px;">
+        <i class="fas fa-hard-hat" style="font-size:80px;color:var(--primary);opacity:0.3;"></i>
+      </div>
+    </div>
+  `;
+}
+
+// ==================== STEEL DESIGN CALCULATORS (IS 800:2007) ====================
+
+// 1. Laterally Supported Beam Design
+function showSteelBeam() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Steel Beam Design – Laterally Supported (IS 800:2007)</h2>
+      <label>Factored Moment Mu (kNm)</label><input type="number" id="sb-mu" value="150">
+      <label>Span L (m)</label><input type="number" id="sb-l" value="6">
+      <label>Yield Strength fy (MPa)</label><select id="sb-fy"><option value="250" selected>Fe250</option><option value="355">Fe355</option><option value="410">Fe410</option></select>
+      <label>Section Class</label><select id="sb-class"><option value="plastic" selected>Plastic</option><option value="compact">Compact</option><option value="semi">Semi-Compact</option></select>
+      <button class="btn-calc" onclick="calcSteelBeam()">Design Beam</button>
+      <div id="sb-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcSteelBeam() {
+  const mu = parseFloat(document.getElementById('sb-mu').value) * 1e6; // kNm to Nmm
+  const l = parseFloat(document.getElementById('sb-l').value);
+  const fy = parseFloat(document.getElementById('sb-fy').value);
+  const secClass = document.getElementById('sb-class').value;
+
+  const beta = secClass === 'plastic' ? 1.0 : secClass === 'compact' ? 1.0 : 1.2;
+  const gamma = 1.1;
+  const Zp_req = mu * gamma / (beta * fy); // mm³
+
+  // Suggest common ISMB sections (approximate Zp in 10^3 mm³)
+  const sections = [
+    {name: "ISMB 150", zp: 170}, {name: "ISMB 200", zp: 310}, {name: "ISMB 250", zp: 520},
+    {name: "ISMB 300", zp: 780}, {name: "ISMB 350", zp: 1100}, {name: "ISMB 400", zp: 1500},
+    {name: "ISMB 450", zp: 1950}, {name: "ISMB 500", zp: 2500}, {name: "ISMB 600", zp: 3800}
+  ];
+
+  let suggested = "Try heavier section";
+  for (let s of sections) {
+    if (s.zp * 1e3 >= Zp_req) { suggested = s.name; break; }
+  }
+
+  document.getElementById('sb-result').innerHTML = `
+    <strong>Required Zp = ${(Zp_req/1e3).toFixed(1)} × 10³ mm³</strong><br>
+    <strong>Suggested Section: ${suggested}</strong><br>
+    <small>Class ${secClass} • fy = ${fy} MPa</small>
+  `;
+  document.getElementById('sb-result').style.display = 'block';
+}
+
+// 2. Steel Column Design
+function showSteelColumn() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Steel Column Design (Axial Load)</h2>
+      <label>Axial Load Pu (kN)</label><input type="number" id="sc-pu" value="1200">
+      <label>Effective Length KL (m)</label><input type="number" id="sc-kl" value="4">
+      <label>fy (MPa)</label><select id="sc-fy"><option value="250" selected>250</option><option value="355">355</option></select>
+      <button class="btn-calc" onclick="calcSteelColumn()">Design Column</button>
+      <div id="sc-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcSteelColumn() {
+  const pu = parseFloat(document.getElementById('sc-pu').value) * 1000; // kN to N
+  const kl = parseFloat(document.getElementById('sc-kl').value) * 1000; // m to mm
+  const fy = parseFloat(document.getElementById('sc-fy').value);
+
+  const lambda = kl / 80; // rough slenderness assumption
+  const fcd = fy / (1.1 * (0.5 + 0.5 * Math.pow(lambda/100, 2))); // simplified
+
+  const A_req = pu / fcd; // mm²
+
+  document.getElementById('sc-result').innerHTML = `
+    <strong>Required Area ≈ ${Math.ceil(A_req)} mm²</strong><br>
+    <strong>Safe Stress fcd ≈ ${fcd.toFixed(1)} MPa</strong><br>
+    <small>Preliminary estimate – use full buckling curve for accuracy</small>
+  `;
+  document.getElementById('sc-result').style.display = 'block';
+}
+
+// 3. Tension Member
+function showSteelTension() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Tension Member Design</h2>
+      <label>Tension Force Tu (kN)</label><input type="number" id="st-tu" value="800">
+      <label>fy (MPa)</label><input type="number" id="st-fy" value="250">
+      <label>Gross Area Ag (mm²)</label><input type="number" id="st-ag" value="5000">
+      <label>Holes (dia mm)</label><input type="number" id="st-hole" value="22">
+      <label>No. of Holes in Line</label><input type="number" id="st-holes" value="2">
+      <button class="btn-calc" onclick="calcTension()">Check Capacity</button>
+      <div id="st-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcTension() {
+  const tu = parseFloat(document.getElementById('st-tu').value) * 1000;
+  const fy = parseFloat(document.getElementById('st-fy').value);
+  const ag = parseFloat(document.getElementById('st-ag').value);
+  const hole = parseFloat(document.getElementById('st-hole').value) + 4; // +4mm clearance
+  const holes = parseFloat(document.getElementById('st-holes').value);
+
+  const an = ag - holes * hole * 10; // assume 10mm plate
+  const designStrength = 0.9 * an * fy / 1.1; // net section
+  const grossYield = ag * fy / 1.25;
+
+  const capacity = Math.min(designStrength, grossYield) / 1000;
+
+  const status = capacity >= tu ? 'SAFE' : 'UNSAFE';
+
+  document.getElementById('st-result').innerHTML = `
+    <strong>Net Area = ${an.toFixed(0)} mm²</strong><br>
+    <strong>Capacity = ${capacity.toFixed(0)} kN</strong><br>
+    <strong>Required = ${tu/1000} kN → ${status}</strong>
+  `;
+  document.getElementById('st-result').style.display = 'block';
+}
+
+// 4. Bolted Connection
+function showSteelConnection() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Bolted Connection (Bearing Type)</h2>
+      <label>Bolt Dia (mm)</label><select id="bc-dia"><option>16</option><option selected>20</option><option>24</option></select>
+      <label>No. of Bolts</label><input type="number" id="bc-num" value="6">
+      <label>Bolt Grade</label><select id="bc-grade"><option value="4.6" selected>4.6</option><option value="8.8">8.8</option></select>
+      <label>Plate Thickness (mm)</label><input type="number" id="bc-t" value="12">
+      <button class="btn-calc" onclick="calcBolt()">Calculate Capacity</button>
+      <div id="bc-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcBolt() {
+  const dia = parseFloat(document.getElementById('bc-dia').value);
+  const num = parseFloat(document.getElementById('bc-num').value);
+  const grade = document.getElementById('bc-grade').value;
+  const t = parseFloat(document.getElementById('bc-t').value);
+
+  const fub = grade === '4.6' ? 400 : 800;
+  const Vnsb = (num * Math.PI * dia * dia / 4 * fub) / 1.25 / 1000; // kN
+
+  document.getElementById('bc-result').innerHTML = `
+    <strong>Shear Capacity = ${Vnsb.toFixed(0)} kN</strong><br>
+    <small>${grade} bolts • M${dia}</small>
+  `;
+  document.getElementById('bc-result').style.display = 'block';
+}
+
+// 5. Base Plate Design
+function showSteelBasePlate() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Base Plate Design (Axial Load)</h2>
+      <label>Axial Load P (kN)</label><input type="number" id="bp-p" value="1200">
+      <label>Concrete fck (MPa)</label><input type="number" id="bp-fck" value="25">
+      <label>Column Size (mm × mm)</label><input type="text" id="bp-col" value="400x400">
+      <button class="btn-calc" onclick="calcBasePlate()">Design Plate</button>
+      <div id="bp-result" class="result" style="display:none;margin-top:20px;"></div>
+    </div>
+  `;
+}
+
+function calcBasePlate() {
+  const p = parseFloat(document.getElementById('bp-p').value);
+  const fck = parseFloat(document.getElementById('bp-fck').value);
+  const col = document.getElementById('bp-col').value.split('x').map(x => parseFloat(x));
+
+  const w = 0.6 * Math.sqrt(fck); // bearing strength
+  const A_req = p / w;
+
+  const side = Math.max(col[0], col[1]) + 100; // rough projection
+  const area_prov = side * side;
+  const thickness = Math.ceil(Math.sqrt(p * 1000 / (0.6 * 250 * side * 2)) / 5) * 5; // simplified
+
+  document.getElementById('bp-result').innerHTML = `
+    <strong>Required Area = ${A_req.toFixed(0)} mm²</strong><br>
+    <strong>Suggested Plate: ${side} × ${side} × ${thickness} mm</strong>
+  `;
+  document.getElementById('bp-result').style.display = 'block';
+}
+
+// Auto-load home and set welcome name on first open
+window.addEventListener('load', () => {
+  document.getElementById('username').textContent = 'Engineer';
+  showHome();
+  
+  // Fix sidebar on desktop
+  if (window.innerWidth > 992) {
+    document.getElementById('sidebar').classList.remove('closed');
+  }
+});
+
   </script>
 </body>
 </html>
+
