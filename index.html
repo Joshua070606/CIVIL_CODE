@@ -18,167 +18,330 @@
   
   <!-- Your existing styles -->
   <style>
-    :root{--p:#c0392b;--a:#2980b9;--g:#27ae60;--d:#2c3e50;--l:#f5f7fa;}
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Inter',sans-serif;background:var(--l);color:#333;line-height:1.6;overflow-x:hidden;}
-    
-    /* Login Screen */
-    #login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;z-index:999;}
-    #login-box{background:rgba(255,255,255,0.2);backdrop-filter:blur(15px);padding:50px 40px;border-radius:20px;text-align:center;max-width:420px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,0.3);}
-    #login-box h1{color:white;font-size:40px;margin-bottom:10px;}
-    input{width:100%;padding:16px;margin:15px 0;border:none;border-radius:12px;font-size:17px;}
-    button{padding:16px 32px;border:none;border-radius:12px;font-weight:600;cursor:pointer;font-size:18px;transition:0.3s;}
-    .btn-red{background:#c0392b;color:white;}
-    .btn-blue{background:#2980b9;color:white;}
+  :root{
+    --primary: #0d9488;      /* Main brand color - Soft Teal */
+    --accent: #f43f5e;        /* Buttons, highlights - Warm Coral */
+    --dark: #1e293b;         /* Header, sidebar, main text */
+    --light: #f8fafc;         /* Background */
+    --success: #10b981;      /* Results, safe */
+    --card-bg: #ffffff;
+    --text: #334155;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--light);
+    color:var(--text);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
 
-    /* Header */
-    header{background:var(--d);color:white;padding:15px 20px;text-align:center;position:fixed;top:0;left:0;right:0;z-index:99;box-shadow:0 4px 15px rgba(0,0,0,0.2);}
-    #menu-toggle{display:none;font-size:28px;cursor:pointer;position:absolute;left:18px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:0.3s;}
-    #menu-toggle:hover{background:rgba(255,255,255,0.3);}
-    header h1{font-size:24px;margin:0;}
-    header p{font-size:14px;margin-top:4px;opacity:0.9;}
+  /* Login Screen - Updated gradient */
+  #login-screen{
+    position:fixed;inset:0;
+    background:linear-gradient(135deg, #0d9488, #0891b2);
+    display:flex;align-items:center;justify-content:center;z-index:999;
+  }
+  #login-box{
+    background:rgba(255,255,255,0.25);
+    backdrop-filter:blur(15px);
+    padding:50px 40px;
+    border-radius:20px;
+    text-align:center;
+    max-width:420px;
+    width:90%;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3);
+  }
+  #login-box h1{color:white;font-size:40px;margin-bottom:10px;}
 
-    /* Compact Sidebar */
-    nav#sidebar{background:var(--d);width:280px;position:fixed;height:100%;overflow-y:auto;padding-top:80px;box-shadow:8px 0 25px rgba(0,0,0,0.2);z-index:98;transition:left 0.35s ease;left:0;}
-    nav#sidebar.closed{left:-280px;}
-    .menu > li > span{display:flex;align-items:center;padding:16px 24px;color:#ddd;font-weight:500;font-size:15px;cursor:pointer;transition:0.25s;gap:14px;}
-    .menu > li > span i{width:24px;text-align:center;}
-    .menu > li > span:hover{background:rgba(255,255,255,0.18);color:white;}
-    .menu > li > span.active{background:var(--p);color:white;}
-    .submenu{padding-left:58px;display:none;background:rgba(0,0,0,0.15);}
-    .submenu.active{display:block;}
-    .submenu span{display:block;padding:11px 0;color:#bbb;font-size:14px;cursor:pointer;}
-    .submenu span:hover{color:white;}
+  input{
+    width:100%;padding:16px;margin:15px 0;
+    border:none;border-radius:12px;font-size:17px;
+    background:rgba(255,255,255,0.9);
+  }
+  button{
+    padding:16px 32px;
+    border:none;
+    border-radius:12px;
+    font-weight:600;
+    cursor:pointer;
+    font-size:18px;
+    transition:0.3s;
+  }
+  .btn-red{background:var(--accent);color:white;}
+  .btn-blue{background:var(--primary);color:white;}
 
-    main{margin-left:280px;margin-top:80px;padding:30px;min-height:calc(100vh - 80px);transition:margin-left 0.35s;}
-    
-    /* Cards & Rest of Styles (unchanged – only compacted sidebar above) */
-    .card{background:white;border-radius:16px;padding:32px;margin-bottom:28px;box-shadow:0 10px 30px rgba(0,0,0,0.08);}
-    .card h2{color:var(--p);font-size:26px;margin-bottom:18px;border-bottom:3px solid var(--p);padding-bottom:10px;}
-    .mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;margin:30px 0;}
-    .mode-card{background:white;border-radius:16px;padding:28px;text-align:center;cursor:pointer;transition:all 0.4s;box-shadow:0 8px 25px rgba(0,0,0,0.1);border:3px solid transparent;}
-    .mode-card:hover{transform:translateY(-10px);border-color:var(--p);}
-    .mode-card i{font-size:48px;color:var(--p);margin-bottom:14px;}
-    .mode-card h3{font-size:19px;color:var(--d);}
-    label{display:block;margin:18px 0 8px;font-weight:600;color:#444;}
-    input,select{width:100%;padding:14px;border:2px solid #ddd;border-radius:12px;font-size:16px;transition:0.3s;}
-    input:focus,select:focus{border-color:var(--p);outline:none;box-shadow:0 0 0 4px rgba(192,57,43,0.15);}
-    button.btn-calc{background:var(--p);color:white;padding:16px 30px;margin-top:20px;width:100%;font-size:18px;cursor:pointer;border:none;border-radius:12px;}
-    .result{margin-top:28px;padding:24px;background:#d4edda;border-left:6px solid #27ae60;border-radius:8px;font-size:18px;}
-    .fail{background:#f8d7da;border-left-color:#c0392b;}
-/* =============== IS CODES GRID – MISSING STYLES =============== */
-.code-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 22px;
-  margin-top: 25px;
-  padding: 10px;
-}
+  /* Header & Sidebar */
+  header{
+    background:var(--dark);
+    color:white;
+    padding:15px 20px;
+    text-align:center;
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:99;
+    box-shadow:0 4px 15px rgba(0,0,0,0.15);
+  }
+  #menu-toggle{
+    display:none;
+    font-size:28px;
+    cursor:pointer;
+    position:absolute;
+    left:18px;
+    top:50%;
+    transform:translateY(-50%);
+    background:rgba(255,255,255,0.15);
+    width:50px;height:50px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:0.3s;
+  }
+  #menu-toggle:hover{background:rgba(255,255,255,0.3);}
+  header h1{font-size:24px;margin:0;}
+  header p{font-size:14px;margin-top:4px;opacity:0.9;}
 
-.code-card {
-  background: white;
-  border-radius: 14px;
-  padding: 22px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.09);
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-}
+  nav#sidebar{
+    background:var(--dark);
+    width:280px;
+    position:fixed;
+    height:100%;
+    overflow-y:auto;
+    padding-top:80px;
+    box-shadow:8px 0 25px rgba(0,0,0,0.15);
+    z-index:98;
+    transition:left 0.35s ease;
+    left:0;
+  }
+  nav#sidebar.closed{left:-280px;}
 
-.code-card:hover {
-  transform: translateY(-8px);
-  border-color: var(--p);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-}
+  .menu > li > span{
+    display:flex;
+    align-items:center;
+    padding:16px 24px;
+    color:#cbd5e1;
+    font-weight:500;
+    font-size:15px;
+    cursor:pointer;
+    transition:0.25s;
+    gap:14px;
+  }
+  .menu > li > span i{width:24px;text-align:center;}
+  .menu > li > span:hover{
+    background:rgba(255,255,255,0.15);
+    color:white;
+  }
+  .menu > li > span.active{
+    background:var(--primary);
+    color:white;
+  }
 
-.code-card h3 {
-  color: var(--p);
-  font-size: 17px;
-  margin-bottom: 8px;
-}
+  .submenu{
+    padding-left:58px;
+    display:none;
+    background:rgba(0,0,0,0.15);
+  }
+  .submenu.active{display:block;}
+  .submenu span{
+    display:block;
+    padding:11px 0;
+    color:#94a3b8;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .submenu span:hover{color:white;}
 
-.code-card p {
-  font-size: 14.5px;
-  color: #444;
-  line-height: 1.5;
-  margin: 12px 0;
-}
+  main{
+    margin-left:280px;
+    margin-top:80px;
+    padding:30px;
+    min-height:calc(100vh - 80px);
+    transition:margin-left 0.35s;
+  }
 
-.code-card a {
-  display: inline-block;
-  background: var(--p);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 15px;
-  margin-top: 10px;
-  transition: 0.3s;
-}
+  /* Cards */
+  .card{
+    background:var(--card-bg);
+    border-radius:16px;
+    padding:32px;
+    margin-bottom:28px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+  }
+  .card h2{
+    color:var(--primary);
+    font-size:26px;
+    margin-bottom:18px;
+    border-bottom:3px solid var(--primary);
+    padding-bottom:10px;
+  }
 
-.code-card a:hover {
-  background: #a93226;
-  transform: scale(1.05);
-}
-    /* Mobile First – Hamburger Visible */
-    @media (max-width:992px){
-      #menu-toggle{display:flex !important;}
-      nav#sidebar{left:-280px;}
-      nav#sidebar.active{left:0;}
-      main{margin-left:0;}
-      header h1{font-size:22px;}
-    }
-    .code-category {margin-bottom:30px;}
-.category-title {
-  background:var(--d);color:white;padding:16px 24px;border-radius:12px;
-  cursor:pointer;font-size:18px;font-weight:600;transition:0.3s;
-}
-.category-title:hover {background:#1e2a38;}
-.code-category .category-grid {display:none;padding:20px 0;}
-.code-category.open .category-grid {display:grid;}
+  .mode-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:22px;
+    margin:30px 0;
+  }
+  .mode-card{
+    background:var(--card-bg);
+    border-radius:16px;
+    padding:28px;
+    text-align:center;
+    cursor:pointer;
+    transition:all 0.4s;
+    box-shadow:0 8px 25px rgba(0,0,0,0.08);
+    border:3px solid transparent;
+  }
+  .mode-card:hover{
+    transform:translateY(-10px);
+    border-color:var(--primary);
+    box-shadow:0 15px 40px rgba(0,0,0,0.12);
+  }
+  .mode-card i{
+    font-size:48px;
+    color:var(--primary);
+    margin-bottom:14px;
+  }
+  .mode-card h3{
+    font-size:19px;
+    color:var(--dark);
+  }
 
-/* Make the main menu item show arrow on the right */
-.menu > li > span.has-submenu {
-  justify-content: space-between;   /* puts icon + text on left, arrow on right */
-}
+  label{
+    display:block;
+    margin:18px 0 8px;
+    font-weight:600;
+    color:#444;
+  }
+  input,select{
+    width:100%;
+    padding:14px;
+    border:2px solid var(--border);
+    border-radius:12px;
+    font-size:16px;
+    transition:0.3s;
+  }
+  input:focus,select:focus{
+    border-color:var(--primary);
+    outline:none;
+    box-shadow:0 0 0 4px rgba(13,148,136,0.15);
+  }
 
-/* Style for the arrow (▼) */
-.submenu-arrow {
-  transition: transform 0.3s ease;   /* smooth rotation */
-  font-size: 14px;
-  opacity: 0.7;
-}
+  button.btn-calc{
+    background:var(--accent);
+    color:white;
+    padding:16px 30px;
+    margin-top:20px;
+    width:100%;
+    font-size:18px;
+    cursor:pointer;
+    border:none;
+    border-radius:12px;
+    transition:0.3s;
+  }
+  button.btn-calc:hover{
+    background:#e11d48;
+    transform:translateY(-2px);
+  }
 
-/* Hide submenu by default */
-.submenu {
-  display: none;
-  background: rgba(0,0,0,0.2);      /* slightly darker background */
-  padding: 8px 0;
-  border-radius: 0 0 8px 8px;
-}
+  .result{
+    margin-top:28px;
+    padding:24px;
+    background:#d4edda;
+    border-left:6px solid var(--success);
+    border-radius:8px;
+    font-size:18px;
+  }
+  .fail{
+    background:#fce7e9;
+    border-left-color:var(--accent);
+  }
 
-/* Show submenu when it's active */
-.submenu.active {
-  display: block;
-}
+  /* IS Codes Grid */
+  .code-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 22px;
+    margin-top: 25px;
+    padding: 10px;
+  }
+  .code-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  .code-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+  }
+  .code-card h3 {
+    color: var(--primary);
+    font-size: 17px;
+    margin-bottom: 8px;
+  }
+  .code-card a {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    margin-top: 10px;
+    transition: 0.3s;
+  }
+  .code-card a:hover {
+    background: #e11d48;
+    transform: scale(1.05);
+  }
 
-/* Make submenu items look nicer */
-.submenu span {
-  padding: 12px 24px 12px 68px !important;  /* more left padding so icons align nicely */
-  font-size: 14.5px;
-  color: #ccc;
-}
+  /* Mobile */
+  @media (max-width:992px){
+    #menu-toggle{display:flex !important;}
+    nav#sidebar{left:-280px;}
+    nav#sidebar.active{left:0;}
+    main{margin-left:0;}
+    header h1{font-size:22px;}
+  }
 
-.submenu span:hover {
-  background: rgba(255,255,255,0.08);
-  color: white;
-}
+  .code-category {margin-bottom:30px;}
+  .category-title {
+    background:var(--dark);color:white;padding:16px 24px;border-radius:12px;
+    cursor:pointer;font-size:18px;font-weight:600;transition:0.3s;
+  }
+  .category-title:hover {background:#0f172a;}
+  .code-category .category-grid {display:none;padding:20px 0;}
+  .code-category.open .category-grid {display:grid;}
 
-/* IMPORTANT: Rotate arrow 180° when submenu is open */
-.menu > li > span.active .submenu-arrow {
-  transform: rotate(180deg);
-}
-  </style>
+  /* Submenu arrows */
+  .menu > li > span.has-submenu {
+    justify-content: space-between;
+  }
+  .submenu-arrow {
+    transition: transform 0.3s ease;
+    font-size: 14px;
+    opacity: 0.7;
+  }
+  .menu > li > span.active .submenu-arrow {
+    transform: rotate(180deg);
+  }
+  .submenu span {
+    padding: 12px 24px 12px 68px !important;
+    font-size: 14.5px;
+    color: #cbd5e1;
+  }
+  .submenu span:hover {
+    background: rgba(255,255,255,0.08);
+    color: white;
+  }
+</style>
 </head>
 <body>
   
@@ -1073,34 +1236,90 @@ function showHome() {
         Choose your path: Design new structural elements or verify existing ones.
       </p>
 
-      <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;margin-bottom:60px;">
-        <!-- DESIGN CARD -->
-        <div class="mode-card" style="width:360px;cursor:pointer;" onclick="showDesignGrid()">
-          <i class="fas fa-calculator" style="font-size:90px;color:var(--p);margin-bottom:20px;"></i>
-          <h3 style="font-size:32px;color:var(--d);">Design</h3>
-          <p style="font-size:18px;color:#666;margin-top:12px;">
-            Create new slabs, beams, columns, tanks, staircases, mix designs etc.
-          </p>
-        </div>
+  <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;margin-bottom:60px;">
+  <!-- DESIGN DROPDOWN CARD -->
+  <div class="mode-card" style="width:360px;cursor:pointer;position:relative;" id="design-dropdown">
+    <i class="fas fa-calculator" style="font-size:90px;color:var(--primary);margin-bottom:20px;"></i>
+    <h3 style="font-size:32px;color:var(--dark);">Design</h3>
+    <p style="font-size:18px;color:#666;margin-top:12px;">
+      Choose RCC or Steel Design
+    </p>
+    <i class="fas fa-chevron-down" style="position:absolute;bottom:20px;right:30px;font-size:24px;color:var(--primary);opacity:0.6;"></i>
+  </div>
 
-        <!-- VERIFY CARD -->
-        <div class="mode-card" style="width:360px;cursor:pointer;" onclick="showVerifyGrid()">
-          <i class="fas fa-check-double" style="font-size:90px;color:var(--g);margin-bottom:20px;"></i>
-          <h3 style="font-size:32px;color:var(--d);">Verify</h3>
-          <p style="font-size:18px;color:#666;margin-top:12px;">
-            Check safety of existing beam, slab, column, footing, tank designs
-          </p>
+  <!-- Hidden submenu that appears on click -->
+  <div id="design-submenu-home" style="display:none;flex-direction:column;gap:20px;width:360px;">
+    <div class="mode-card" style="cursor:pointer;" onclick="showDesignGrid()">
+      <i class="fas fa-building-columns" style="font-size:70px;color:var(--primary);margin-bottom:15px;"></i>
+      <h3>RCC Design</h3>
+      <p>Slabs, beams, columns, tanks, staircases, mix design etc.</p>
+    </div>
+    <div class="mode-card" style="cursor:pointer;" onclick="showSteelDesignGrid()">
+      <i class="fas fa-grip-lines-vertical" style="font-size:70px;color:var(--primary);margin-bottom:15px;"></i>
+      <h3>Steel Design</h3>
+      <p>Beams, columns, tension members, connections, base plates (IS 800)</p>
+    </div>
+  </div>
+
+  <!-- VERIFY CARD (unchanged) -->
+  <div class="mode-card" style="width:360px;cursor:pointer;" onclick="showVerifyGrid()">
+    <i class="fas fa-check-double" style="font-size:90px;color:var(--success);margin-bottom:20px;"></i>
+    <h3 style="font-size:32px;color:var(--dark);">Verify</h3>
+    <p style="font-size:18px;color:#666;margin-top:12px;">
+      Check safety of existing beam, slab, column, footing, tank designs
+    </p>
+  </div>
+</div>
+  `;
+}
+// Toggle Design submenu on homepage
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('design-dropdown');
+  const submenu = document.getElementById('design-submenu-home');
+
+  if (dropdown && dropdown.contains(e.target)) {
+    submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
+  } else if (submenu && !submenu.contains(e.target)) {
+    submenu.style.display = 'none'; // close if clicking outside
+  }
+});
+
+// New function to show Steel Design grid
+function showSteelDesignGrid() {
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2 style="text-align:center;margin-bottom:30px;">Steel Design (IS 800:2007)</h2>
+      <p style="text-align:center;font-size:18px;color:#555;margin-bottom:40px;">Select the steel member to design</p>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="showSteelBeam()">
+          <i class="fas fa-vector-square" style="font-size:70px;color:var(--primary);"></i>
+          <h3>Beam Design</h3>
+          <p>Laterally supported/restrained</p>
+        </div>
+        <div class="mode-card" onclick="showSteelColumn()">
+          <i class="fas fa-columns" style="font-size:70px;color:var(--primary);"></i>
+          <h3>Column Design</h3>
+          <p>Axial compression & buckling</p>
+        </div>
+        <div class="mode-card" onclick="showSteelTension()">
+          <i class="fas fa-link" style="font-size:70px;color:var(--primary);"></i>
+          <h3>Tension Member</h3>
+          <p>Net section & block shear</p>
+        </div>
+        <div class="mode-card" onclick="showSteelConnection()">
+          <i class="fas fa-bolt" style="font-size:70px;color:var(--primary);"></i>
+          <h3>Bolted Connection</h3>
+          <p>Shear, bearing, tension</p>
+        </div>
+        <div class="mode-card" onclick="showSteelBasePlate()">
+          <i class="fas fa-layer-group" style="font-size:70px;color:var(--primary);"></i>
+          <h3>Base Plate</h3>
+          <p>Axial load transfer</p>
         </div>
       </div>
-
-      <p style="font-size:16px;color:#777;line-height:1.8;">
-        All calculations follow Limit State Method as per latest Indian Standards.<br>
-        <strong>For educational/preliminary use only.</strong> Always get final approval from a qualified structural engineer.
-      </p>
-
-      <p style="margin-top:40px;font-size:15px;color:#999;">
-        Created with passion • Free forever • Version 1.0 • 2025
-      </p>
+      <button class="btn-calc" onclick="showHome()" style="margin-top:40px;width:auto;padding:14px 32px;">
+        ← Back to Home
+      </button>
     </div>
   `;
 }
@@ -3117,4 +3336,5 @@ window.addEventListener('load', () => {
   </script>
 </body>
 </html>
+
 
