@@ -833,6 +833,37 @@
     html += `</div></div>`;
     document.getElementById('content').innerHTML = html;
   }
+  function drawBeamSection(b, D, d, barDia, numBarsTension, numBarsComp = 0) {
+  const svg = `
+    <svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style="background:#f9f9f9;border:1px solid #ccc;margin-top:20px;">
+      <!-- Beam outline -->
+      <rect x="50" y="50" width="300" height="${D*200/500}" fill="none" stroke="#333" stroke-width="3"/>
+      <!-- Effective depth line -->
+      <line x1="50" y1="${50 + 25*200/500}" x2="350" y2="${50 + 25*200/500}" stroke="#666" stroke-dasharray="5,5"/>
+      <text x="360" y="${50 + 25*200/500 + 10}" font-size="14">Cover + stirrup</text>
+      
+      <!-- Tension bars (bottom) -->
+      ${Array(numBarsTension).fill().map((_, i) => {
+        const spacing = 300 / (numBarsTension + 1);
+        const x = 50 + spacing * (i + 1);
+        return `<circle cx="${x}" cy="${50 + D*200/500 - 30}" r="${barDia*10}" fill="#d00" stroke="#000"/>
+                <text x="${x}" y="${50 + D*200/500 + 10}" font-size="12" text-anchor="middle">φ${barDia}</text>`;
+      }).join('')}
+      
+      <!-- Compression bars (top, if any) -->
+      ${numBarsComp > 0 ? Array(numBarsComp).fill().map((_, i) => {
+        const spacing = 300 / (numBarsComp + 1);
+        const x = 50 + spacing * (i + 1);
+        return `<circle cx="${x}" cy="${50 + 30}" r="${barDia*10}" fill="#00d" stroke="#000"/>`;
+      }).join('') : ''}
+      
+      <!-- Dimensions -->
+      <text x="180" y="40" font-size="16" text-anchor="middle">${b} mm width</text>
+      <text x="20" y="150" font-size="16">${D} mm depth</text>
+    </svg>
+  `;
+  return svg;
+}
 
   function showCountryCodes(country) {
     const codeCats = countries[country];
@@ -860,6 +891,48 @@
   }
 </script>
      <script>
+
+      function showDesignHub() {
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="padding:40px;">
+      <h2 style="text-align:center; margin-bottom:35px; font-size:36px; color:var(--primary);">
+        Choose Design Category
+      </h2>
+      
+      <div style="display:flex; justify-content:center; gap:50px; flex-wrap:wrap;">
+        <!-- RCC Card -->
+        <div class="mode-card" 
+             style="width:420px; padding:50px 30px; cursor:pointer; transition:all 0.4s;"
+             onclick="showRccDesignGrid()">
+          <i class="fas fa-building-columns" style="font-size:110px; color:var(--primary); margin-bottom:25px;"></i>
+          <h3 style="font-size:32px; margin-bottom:15px;">RCC Design</h3>
+          <p style="font-size:18px; color:#555; line-height:1.5;">
+            Slabs • Beams • Columns • Water Tanks • Staircases • Mix Design
+          </p>
+        </div>
+
+        <!-- Steel Card -->
+        <div class="mode-card" 
+             style="width:420px; padding:50px 30px; cursor:pointer; transition:all 0.4s;"
+             onclick="showSteelDesignGrid()">
+          <i class="fas fa-grip-lines-vertical" style="font-size:110px; color:var(--primary); margin-bottom:25px;"></i>
+          <h3 style="font-size:32px; margin-bottom:15px;">Steel Design</h3>
+          <p style="font-size:18px; color:#555; line-height:1.5;">
+            Beams • Columns • Tension Members • Connections • Base Plates
+          </p>
+        </div>
+      </div>
+
+      <div style="text-align:center; margin-top:60px;">
+        <button class="btn-calc" 
+                onclick="showHome()" 
+                style="padding:16px 50px; font-size:20px;">
+          ← Back to Home
+        </button>
+      </div>
+    </div>
+  `;
+}
 
 
     function toggleSub(id) {
@@ -1238,28 +1311,15 @@ function showHome() {
 
   <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;margin-bottom:60px;">
   <!-- DESIGN DROPDOWN CARD -->
-  <div class="mode-card" style="width:360px;cursor:pointer;position:relative;" id="design-dropdown">
-    <i class="fas fa-calculator" style="font-size:90px;color:var(--primary);margin-bottom:20px;"></i>
-    <h3 style="font-size:32px;color:var(--dark);">Design</h3>
-    <p style="font-size:18px;color:#666;margin-top:12px;">
-      Choose RCC or Steel Design
-    </p>
-    <i class="fas fa-chevron-down" style="position:absolute;bottom:20px;right:30px;font-size:24px;color:var(--primary);opacity:0.6;"></i>
-  </div>
-
-  <!-- Hidden submenu that appears on click -->
-  <div id="design-submenu-home" style="display:none;flex-direction:column;gap:20px;width:360px;">
-    <div class="mode-card" style="cursor:pointer;" onclick="showDesignGrid()">
-      <i class="fas fa-building-columns" style="font-size:70px;color:var(--primary);margin-bottom:15px;"></i>
-      <h3>RCC Design</h3>
-      <p>Slabs, beams, columns, tanks, staircases, mix design etc.</p>
-    </div>
-    <div class="mode-card" style="cursor:pointer;" onclick="showSteelDesignGrid()">
-      <i class="fas fa-grip-lines-vertical" style="font-size:70px;color:var(--primary);margin-bottom:15px;"></i>
-      <h3>Steel Design</h3>
-      <p>Beams, columns, tension members, connections, base plates (IS 800)</p>
-    </div>
-  </div>
+<div class="mode-card" 
+     style="width:380px; cursor:pointer; transition:all 0.3s;"
+     onclick="showDesignHub()">
+  <i class="fas fa-calculator" style="font-size:100px; color:var(--primary); margin-bottom:25px;"></i>
+  <h3 style="font-size:34px; color:var(--dark); margin-bottom:12px;">Design</h3>
+  <p style="font-size:18px; color:#555;">
+    RCC • Steel • Future modules
+  </p>
+</div>
 
   <!-- VERIFY CARD (unchanged) -->
   <div class="mode-card" style="width:360px;cursor:pointer;" onclick="showVerifyGrid()">
@@ -1325,7 +1385,7 @@ function showSteelDesignGrid() {
 }
 
 // New function: Show grid of all Design Calculators (like IS Codes country selection)
-function showDesignGrid() {
+function showRccDesignGrid() {
   document.getElementById('content').innerHTML = `
     <div class="card">
       <h2 style="text-align:center;margin-bottom:30px;">Design Calculators</h2>
@@ -1425,7 +1485,7 @@ function showVerifyGrid() {
 }
 
 // New function: Show grid of all Design Calculators (like IS Codes country selection)
-function showDesignGrid() {
+function showSTEELDesignGrid() {
   document.getElementById('content').innerHTML = `
     <div class="card">
       <h2 style="text-align:center;margin-bottom:30px;">Design Calculators</h2>
@@ -2639,6 +2699,9 @@ function calculateMix() {
       <em>Note: Assumes simply supported. For continuous, use appropriate moments.</em>
     </div>
   `;
+  document.getElementById('beam-result').innerHTML += drawBeamSection(b, D, d, barDia, numBars, Asc > 0 ? Math.ceil(Asc / barArea) : 0);
+
+  
 }
    // ==================== COLUMN DESIGN ====================
     function showColumn() {
@@ -3336,5 +3399,6 @@ window.addEventListener('load', () => {
   </script>
 </body>
 </html>
+
 
 
